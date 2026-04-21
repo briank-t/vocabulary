@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>單字學習卡</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FFF8F0;
+    --ink: #2D2A26;
+    --pink: #F7A8C4;
+    --pink-dark: #E07FAA;
+    --yellow: #FFD966;
+    --yellow-dark: #E6BC3A;
+    --teal: #7DD5C8;
+    --teal-dark: #4BB5A8;
+    --purple: #C5A8E8;
+    --muted: #9E9790;
+    --soft: #F0E8DF;
+    --white: #FFFFFF;
+    --card-w: min(340px, 88vw);
+    --card-h: 300px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Nunito', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 1rem 3rem;
+  }
+  header { text-align: center; margin-bottom: 1.5rem; }
+  header h1 {
+    font-size: clamp(1.7rem, 6vw, 2.3rem);
+    font-weight: 800;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+  .rainbow-line { display:flex; justify-content:center; gap:5px; margin-top:5px; }
+  .dot { width:8px; height:8px; border-radius:50%; }
+
+  .tabs {
+    display:flex; gap:8px;
+    background:var(--soft); border-radius:40px; padding:5px;
+    margin-bottom:1.6rem;
+  }
+  .tab-btn {
+    border:none; background:transparent;
+    font-family:'Nunito',sans-serif;
+    font-size:0.88rem; font-weight:700;
+    padding:8px 20px; border-radius:40px;
+    cursor:pointer; color:var(--muted); transition:all 0.2s;
+  }
+  .tab-btn.active { background:var(--ink); color:var(--white); }
+
+  #card-mode { width:100%; max-width:420px; display:flex; flex-direction:column; align-items:center; }
+
+  .progress-row {
+    display:flex; justify-content:space-between;
+    width:var(--card-w); margin-bottom:8px;
+    font-size:0.8rem; color:var(--muted); font-weight:700;
+  }
+  .progress-bar {
+    width:var(--card-w); height:8px;
+    background:var(--soft); border-radius:99px;
+    margin-bottom:1.2rem; overflow:hidden;
+  }
+  .progress-fill {
+    height:100%; background:linear-gradient(90deg,var(--pink),var(--purple));
+    border-radius:99px; transition:width 0.4s;
+  }
+
+  .scene {
+    width:var(--card-w); height:var(--card-h);
+    perspective:900px; cursor:pointer; margin-bottom:1.2rem;
+  }
+  .card-inner {
+    width:100%; height:100%;
+    position:relative; transform-style:preserve-3d;
+    transition:transform 0.55s cubic-bezier(.4,0,.2,1);
+  }
+  .scene.flipped .card-inner { transform:rotateY(180deg); }
+  .card-face {
+    position:absolute; inset:0; backface-visibility:hidden;
+    border-radius:24px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:1.2rem;
+  }
+  .card-front {
+    background:var(--white);
+    border:3px solid var(--yellow);
+    box-shadow:5px 5px 0 var(--yellow-dark);
+  }
+  .card-back {
+    background:var(--pink);
+    border:3px solid var(--pink-dark);
+    box-shadow:5px 5px 0 var(--pink-dark);
+    transform:rotateY(180deg);
+  }
+
+  .card-img-wrap {
+    width:110px; height:110px;
+    border-radius:16px;
+    background:var(--soft);
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:10px;
+    overflow:hidden;
+  }
+  .card-img-wrap img {
+    width:100%; height:100%; object-fit:contain; border-radius:12px;
+  }
+  .card-img-wrap .emoji-fb {
+    font-size:3.2rem; line-height:1;
+  }
+
+  .word-en {
+    font-size:clamp(2rem,9vw,2.8rem);
+    font-weight:800; color:var(--ink);
+    letter-spacing:-0.01em; line-height:1;
+  }
+  .word-phonetic { font-size:0.85rem; color:var(--muted); margin-top:4px; font-weight:600; }
+  .speak-mini {
+    margin-top:8px; background:var(--yellow); border:none;
+    border-radius:99px; padding:6px 16px;
+    font-family:'Nunito',sans-serif; font-size:0.82rem; font-weight:700;
+    cursor:pointer; transition:transform 0.1s; color:var(--ink);
+  }
+  .speak-mini:hover { transform:scale(1.05); }
+  .hint-text { font-size:0.7rem; color:var(--muted); margin-top:6px; }
+
+  .word-zh {
+    font-size:clamp(2rem,8vw,2.6rem);
+    font-weight:800; color:var(--white);
+    text-shadow:2px 2px 0 var(--pink-dark);
+  }
+  .word-en-back { font-size:1rem; font-weight:700; color:rgba(255,255,255,0.75); margin-top:6px; }
+  .back-emoji { font-size:2.5rem; margin-bottom:8px; }
+
+  .controls { display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap; justify-content:center; }
+  .ctrl-btn {
+    border:2.5px solid var(--ink); background:transparent; color:var(--ink);
+    font-family:'Nunito',sans-serif; font-size:0.85rem; font-weight:700;
+    padding:9px 18px; border-radius:40px; cursor:pointer; transition:all 0.15s;
+  }
+  .ctrl-btn:hover { background:var(--ink); color:var(--white); transform:translateY(-1px); }
+  .ctrl-btn.primary { background:var(--teal); border-color:var(--teal-dark); color:var(--ink); }
+  .ctrl-btn.primary:hover { background:var(--teal-dark); }
+  .ctrl-btn.active-play { background:var(--pink); border-color:var(--pink-dark); color:var(--ink); }
+
+  .toggle-row { display:flex; gap:14px; align-items:center; font-size:0.8rem; color:var(--muted); font-weight:700; }
+  .toggle-label { display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none; }
+  input[type=checkbox] { accent-color:var(--teal); width:15px; height:15px; cursor:pointer; }
+
+  #dict-mode { width:100%; max-width:420px; display:none; flex-direction:column; align-items:center; }
+  .dict-card {
+    width:var(--card-w); background:var(--white);
+    border:3px solid var(--purple); border-radius:24px;
+    padding:1.8rem; text-align:center;
+    box-shadow:5px 5px 0 var(--purple); margin-bottom:1.2rem;
+  }
+  .dict-num { font-size:0.78rem; color:var(--muted); font-weight:700; margin-bottom:6px; }
+  .dict-instruction { font-size:0.88rem; color:var(--muted); font-weight:600; margin-bottom:1.2rem; line-height:1.5; }
+  .dict-speak-btn {
+    background:var(--teal); border:2.5px solid var(--teal-dark);
+    color:var(--ink); font-family:'Nunito',sans-serif;
+    font-size:1rem; font-weight:800;
+    padding:12px 28px; border-radius:40px;
+    cursor:pointer; transition:transform 0.15s;
+  }
+  .dict-speak-btn:hover { transform:scale(1.04); }
+  .dict-speak-btn:disabled { opacity:0.4; cursor:default; transform:none; }
+
+  .dict-answer-wrap { width:var(--card-w); margin-bottom:0.8rem; }
+  .dict-answer-wrap label { font-size:0.78rem; color:var(--muted); font-weight:700; margin-bottom:6px; display:block; }
+  .dict-input {
+    width:100%; border:2.5px solid var(--soft); border-radius:14px;
+    padding:12px 16px; font-size:1.5rem; font-family:'Nunito',sans-serif;
+    font-weight:800; background:var(--white); color:var(--ink);
+    outline:none; transition:border-color 0.15s;
+    text-align:center; letter-spacing:0.08em;
+  }
+  .dict-input:focus { border-color:var(--teal); }
+  .dict-input.correct { border-color:var(--teal-dark); background:#edfaf8; }
+  .dict-input.wrong { border-color:var(--pink-dark); background:#fff0f5; }
+
+  .dict-result {
+    width:var(--card-w); text-align:center;
+    font-size:1rem; font-weight:800;
+    min-height:28px; margin-bottom:0.8rem;
+  }
+  .dict-result.correct { color:var(--teal-dark); }
+  .dict-result.wrong { color:var(--pink-dark); }
+  .dict-controls { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+
+  .score-box {
+    display:none; width:var(--card-w);
+    background:var(--white); border:3px solid var(--yellow);
+    border-radius:24px; padding:2rem; text-align:center;
+    box-shadow:5px 5px 0 var(--yellow-dark); margin-bottom:1.2rem;
+  }
+  .score-box h2 { font-size:1.4rem; font-weight:800; margin-bottom:6px; }
+  .score-num { font-size:3.5rem; font-weight:800; color:var(--pink-dark); line-height:1; }
+  .score-sub { font-size:0.85rem; color:var(--muted); font-weight:700; margin-top:4px; }
+  .score-list { margin-top:1rem; text-align:left; width:100%; }
+  .score-item {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:7px 0; border-bottom:1.5px solid var(--soft);
+    font-size:0.85rem; font-weight:700; color:var(--ink);
+  }
+  .badge { font-size:0.72rem; padding:3px 10px; border-radius:99px; font-weight:800; }
+  .badge.ok { background:#d4f5f0; color:var(--teal-dark); }
+  .badge.no { background:#fce8f0; color:var(--pink-dark); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌟 單字學習卡 🌟</h1>
+  <div class="rainbow-line">
+    <div class="dot" style="background:#F7A8C4"></div>
+    <div class="dot" style="background:#FFD966"></div>
+    <div class="dot" style="background:#7DD5C8"></div>
+    <div class="dot" style="background:#C5A8E8"></div>
+    <div class="dot" style="background:#F7A8C4"></div>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchMode('card')">📖 單字卡</button>
+  <button class="tab-btn" onclick="switchMode('dict')">✏️ 聽寫模式</button>
+</div>
+
+<div id="card-mode">
+  <div class="progress-row">
+    <span id="card-counter">1 / 12</span>
+    <span id="known-count">⭐ 0 已學</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:8.33%"></div></div>
+
+  <div class="scene" id="scene" onclick="flipCard()">
+    <div class="card-inner">
+      <div class="card-face card-front">
+        <div class="card-img-wrap" id="card-img-wrap">
+          <span class="emoji-fb" id="card-emoji">🎩</span>
+        </div>
+        <div class="word-en" id="card-en">hat</div>
+        <div class="word-phonetic" id="card-ph">/hæt/</div>
+        <button class="speak-mini" onclick="speakWord(event)">🔊 念出來</button>
+        <div class="hint-text">點我翻面看中文 ✨</div>
+      </div>
+      <div class="card-face card-back">
+        <div class="back-emoji" id="card-emoji-back">🎩</div>
+        <div class="word-zh" id="card-zh">帽子</div>
+        <div class="word-en-back" id="card-en-back">hat</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl-btn" onclick="prevCard()">⬅ 上一張</button>
+    <button class="ctrl-btn primary" onclick="markKnown()">⭐ 已學！</button>
+    <button class="ctrl-btn" onclick="nextCard()">下一張 ➡</button>
+  </div>
+  <div class="controls">
+    <button class="ctrl-btn" id="play-btn" onclick="toggleAutoplay()">▶ 自動播放</button>
+    <button class="ctrl-btn" onclick="shuffleCards()">🔀 隨機排序</button>
+    <button class="ctrl-btn" onclick="resetCards()">🔄 重設</button>
+  </div>
+  <div class="toggle-row">
+    <label class="toggle-label"><input type="checkbox" id="auto-speak" checked> 自動發音</label>
+    <label class="toggle-label"><input type="checkbox" id="auto-flip"> 自動翻卡</label>
+  </div>
+</div>
+
+<div id="dict-mode">
+  <div class="score-box" id="score-box">
+    <h2>🎉 聽寫完成！</h2>
+    <div class="score-num" id="score-num">0</div>
+    <div class="score-sub" id="score-sub">/ 12 答對</div>
+    <div class="score-list" id="score-list"></div>
+    <button class="ctrl-btn primary" style="margin-top:1rem" onclick="initDictation()">再來一次 🔄</button>
+  </div>
+
+  <div id="dict-main" style="display:flex;flex-direction:column;align-items:center;width:100%;max-width:420px">
+    <div class="dict-card">
+      <div class="dict-num" id="dict-counter">第 1 題 / 12</div>
+      <div class="dict-instruction">👂 仔細聽，在紙上寫下單字，再輸入答案！</div>
+      <button class="dict-speak-btn" id="dict-speak-btn" onclick="dictSpeak()">🔊 播放單字</button>
+    </div>
+    <div class="dict-answer-wrap">
+      <label>輸入你的答案</label>
+      <input type="text" class="dict-input" id="dict-input" placeholder="寫下你聽到的單字…" autocomplete="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter') checkDict()">
+    </div>
+    <div class="dict-result" id="dict-result"></div>
+    <div class="dict-controls">
+      <button class="ctrl-btn" onclick="dictSpeak()">🔊 再聽一次</button>
+      <button class="ctrl-btn primary" onclick="checkDict()" id="check-btn">✅ 確認答案</button>
+      <button class="ctrl-btn" id="dict-next-btn" onclick="dictNext()" style="display:none">下一題 ➡</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const words = [
+  { en:'hat', zh:'帽子', ph:'/hæt/', emoji:'🎩',
+    img:'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f3a9.png' },
+  { en:'bin', zh:'垃圾桶', ph:'/bɪn/', emoji:'🗑️',
+    img:'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f5d1.png' },
+  { en:'dig', zh:'挖掘', ph:'/dɪɡ/', emoji:'⛏️',
+    img:'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/26cf.png' },
+  { en:'hug', zh:'擁抱', ph:'/hʌɡ/', emoji:'🤗',
+    img:'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f917.png' },
+  { en:'hut', zh:'小屋', ph:'/hʌt/', emoji:'🛖',
+    img:'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f6d6.png' },
+  { en:'ten', zh:'十', ph:'/tɛn/', emoji:'🔟',
+    img:'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f51f.png' },
+  { en:'hot', zh:'熱的', ph:'/hɒt/', emoji:'🌶️',
+    img:'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f336.png' },
+  { en:'log', zh:'木頭', ph:'/lɒɡ/', emoji:'🪵',
+    img:'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1fab5.png' },
+  { en:'mop', zh:'拖把', ph:'/mɒp/', emoji:'🧹',
+    img:'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f9f9.png' },
+  { en:'fix', zh:'修理', ph:'/fɪks/', emoji:'🔧',
+    img:'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f527.png' },
+  { en:'pit', zh:'坑洞', ph:'/pɪt/', emoji:'🕳️',
+    img:'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f573.png' },
+  { en:'ill', zh:'生病的', ph:'/ɪl/', emoji:'🤒',
+    img:'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f912.png' }
+];
+
+let deck=[...words], idx=0, known=new Set(), isFlipped=false;
+let autoTimer=null, autoStep=0;
+
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US';
+  u.rate = 1.0;
+  u.pitch = 1.0;
+  u.volume = 1;
+  const voices = window.speechSynthesis.getVoices();
+  const preferred = ['Samantha','Karen','Moira','Tessa','Fiona','Victoria','Allison','Ava','Susan','Zoe','Nicky'];
+  let chosen = null;
+  for (const name of preferred) {
+    chosen = voices.find(v => v.name.includes(name) && v.lang.startsWith('en'));
+    if (chosen) break;
+  }
+  if (!chosen) chosen = voices.find(v => v.lang.startsWith('en-') && /female|woman/i.test(v.name));
+  if (!chosen) chosen = voices.find(v => v.lang.startsWith('en'));
+  if (chosen) u.voice = chosen;
+  window.speechSynthesis.speak(u);
+}
+
+if (window.speechSynthesis) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+}
+
+function setCardImage(w) {
+  const wrap = document.getElementById('card-img-wrap');
+  wrap.innerHTML = '';
+  const img = new Image();
+  img.src = w.img;
+  img.alt = w.en;
+  img.style.cssText = 'width:100%;height:100%;object-fit:contain;border-radius:12px;';
+  img.onerror = () => {
+    wrap.innerHTML = `<span class="emoji-fb">${w.emoji}</span>`;
+  };
+  wrap.appendChild(img);
+}
+
+function render() {
+  const w = deck[idx];
+  document.getElementById('card-en').textContent = w.en;
+  document.getElementById('card-en-back').textContent = w.en;
+  document.getElementById('card-ph').textContent = w.ph;
+  document.getElementById('card-zh').textContent = w.zh;
+  document.getElementById('card-emoji-back').textContent = w.emoji;
+  setCardImage(w);
+  document.getElementById('card-counter').textContent = `${idx+1} / ${deck.length}`;
+  document.getElementById('known-count').textContent = `⭐ ${known.size} 已學`;
+  document.getElementById('prog-fill').style.width = `${((idx+1)/deck.length)*100}%`;
+  document.getElementById('scene').classList.remove('flipped');
+  isFlipped = false;
+  if (document.getElementById('auto-speak').checked) setTimeout(() => speak(w.en), 350);
+}
+
+function flipCard() {
+  isFlipped = !isFlipped;
+  document.getElementById('scene').classList.toggle('flipped', isFlipped);
+}
+function nextCard() { idx=(idx+1)%deck.length; render(); }
+function prevCard() { idx=(idx-1+deck.length)%deck.length; render(); }
+function markKnown() { known.add(deck[idx].en); render(); nextCard(); }
+function shuffleCards() {
+  for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
+  idx=0; render();
+}
+function resetCards() { deck=[...words]; idx=0; known.clear(); stopAutoplay(); render(); }
+function speakWord(e) { e.stopPropagation(); speak(deck[idx].en); }
+
+function toggleAutoplay() {
+  if (autoTimer) { stopAutoplay(); return; }
+  const btn=document.getElementById('play-btn');
+  btn.textContent='⏹ 停止播放'; btn.classList.add('active-play');
+  autoStep=0; runAutoStep();
+}
+function stopAutoplay() {
+  clearTimeout(autoTimer); autoTimer=null;
+  const btn=document.getElementById('play-btn');
+  btn.textContent='▶ 自動播放'; btn.classList.remove('active-play');
+}
+function runAutoStep() {
+  const doFlip=document.getElementById('auto-flip').checked;
+  if(autoStep===0){
+    render();
+    autoTimer=setTimeout(()=>{ if(doFlip) flipCard(); autoStep=1; runAutoStep(); },2200);
+  } else {
+    autoTimer=setTimeout(()=>{ idx=(idx+1)%deck.length; autoStep=0; runAutoStep(); },1400);
+  }
+}
+
+let dictDeck=[], dictIdx=0, dictAnswered=false, dictResults=[];
+
+function initDictation() {
+  dictDeck=[...words];
+  for(let i=dictDeck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[dictDeck[i],dictDeck[j]]=[dictDeck[j],dictDeck[i]];}
+  dictIdx=0; dictAnswered=false; dictResults=[];
+  document.getElementById('score-box').style.display='none';
+  document.getElementById('dict-main').style.display='flex';
+  updateDictUI();
+}
+
+function updateDictUI() {
+  document.getElementById('dict-counter').textContent=`第 ${dictIdx+1} 題 / ${dictDeck.length}`;
+  document.getElementById('dict-input').value='';
+  document.getElementById('dict-input').className='dict-input';
+  document.getElementById('dict-result').textContent='';
+  document.getElementById('dict-result').className='dict-result';
+  document.getElementById('dict-next-btn').style.display='none';
+  document.getElementById('check-btn').style.display='inline-block';
+  dictAnswered=false;
+  setTimeout(()=>document.getElementById('dict-input').focus(),100);
+}
+
+function dictSpeak() { speak(dictDeck[dictIdx].en); }
+
+function checkDict() {
+  if(dictAnswered) return;
+  const ans=document.getElementById('dict-input').value.trim().toLowerCase();
+  const correct=dictDeck[dictIdx].en.toLowerCase();
+  dictAnswered=true;
+  const isOk=ans===correct;
+  dictResults.push({word:dictDeck[dictIdx].en,zh:dictDeck[dictIdx].zh,emoji:dictDeck[dictIdx].emoji,correct:isOk,given:ans});
+  const input=document.getElementById('dict-input');
+  const result=document.getElementById('dict-result');
+  if(isOk){
+    input.className='dict-input correct';
+    result.textContent='🎉 答對了！棒棒！'; result.className='dict-result correct';
+    speak('Correct! Great job!');
+  } else {
+    input.className='dict-input wrong';
+    result.textContent=`😅 正確答案是：${dictDeck[dictIdx].en}`; result.className='dict-result wrong';
+    setTimeout(()=>speak(dictDeck[dictIdx].en),400);
+  }
+  document.getElementById('check-btn').style.display='none';
+  if(dictIdx<dictDeck.length-1){
+    document.getElementById('dict-next-btn').style.display='inline-block';
+  } else {
+    setTimeout(showScore,1000);
+  }
+}
+
+function dictNext() { dictIdx++; updateDictUI(); }
+
+function showScore() {
+  const correct=dictResults.filter(r=>r.correct).length;
+  document.getElementById('score-num').textContent=correct;
+  document.getElementById('score-sub').textContent=`/ ${dictResults.length} 答對`;
+  const list=document.getElementById('score-list');
+  list.innerHTML=dictResults.map(r=>`
+    <div class="score-item">
+      <span>${r.emoji} ${r.word} <span style="color:var(--muted);font-size:0.78rem">${r.zh}</span></span>
+      <span class="badge ${r.correct?'ok':'no'}">${r.correct?'✓ 正確':'✗ '+r.given}</span>
+    </div>`).join('');
+  document.getElementById('score-box').style.display='block';
+  document.getElementById('dict-main').style.display='none';
+  if(correct===dictResults.length) setTimeout(()=>speak('Excellent! You got all of them right!'),300);
+  else setTimeout(()=>speak('Good job! Keep practicing!'),300);
+}
+
+function switchMode(mode) {
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',(i===0&&mode==='card')||(i===1&&mode==='dict')));
+  const cardEl=document.getElementById('card-mode');
+  const dictEl=document.getElementById('dict-mode');
+  if(mode==='card'){ cardEl.style.display='flex'; dictEl.style.display='none'; }
+  else { cardEl.style.display='none'; dictEl.style.display='flex'; initDictation(); }
+}
+
+render();
+</script>
+</body>
+</html>

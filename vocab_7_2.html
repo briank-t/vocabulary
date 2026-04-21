@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oliver's Vocabulary</title>
+    <style>
+        body { font-family: 'Comic Sans MS', 'Chalkboard SE', 'Segoe UI', Arial, sans-serif; background-color: #fff9db; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .app-container { background: white; width: 95%; max-width: 450px; padding: 20px; border-radius: 30px; box-shadow: 0 15px 0 #f1c40f; text-align: center; border: 4px solid #f1c40f; }
+        
+        h1 { color: #f39c12; margin-top: 0; font-size: 1.8rem; text-shadow: 1px 1px 0px #fff; }
+        
+        .toolbar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .btn { padding: 12px; border: none; border-radius: 15px; cursor: pointer; font-weight: bold; font-size: 0.9rem; transition: 0.2s; box-shadow: 0 4px 0 rgba(0,0,0,0.1); }
+        .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.1); }
+        
+        .btn-mode { background: #ff7675; color: white; } /* 預設聽寫關閉 */
+        .btn-mode.active { background: #d63031; }
+        .btn-shuffle { background: #74b9ff; color: white; }
+
+        .card { border: 3px dashed #fab1a0; border-radius: 20px; padding: 15px; background: #fff; min-height: 420px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; position: relative; }
+        
+        .image-container { width: 100%; height: 200px; border-radius: 15px; overflow: hidden; background: #fff; display: flex; justify-content: center; align-items: center; }
+        .image-container img { max-width: 85%; max-height: 85%; object-fit: contain; }
+        
+        .word-display { font-size: 2.8rem; font-weight: bold; color: #2d3436; margin: 5px 0; min-height: 60px; }
+        .word-hidden { color: #eee; letter-spacing: 5px; }
+        
+        .pronounce-btn { font-size: 3.5rem; background: none; border: none; cursor: pointer; color: #e67e22; padding: 0; }
+        .pronounce-btn:hover { transform: scale(1.1); }
+
+        .input-area { margin-top: 10px; width: 100%; }
+        input[type="text"] { font-size: 1.5rem; padding: 12px; width: 85%; border: 3px solid #ffeaa7; border-radius: 20px; text-align: center; outline: none; background: #fffdf0; }
+        input[type="text"]:focus { border-color: #fdcb6e; }
+        .feedback { height: 30px; margin-top: 8px; font-weight: bold; font-size: 1.2rem; }
+        
+        .nav-btns { display: flex; justify-content: space-between; margin-top: 15px; width: 100%; }
+        .btn-nav { background: #55efc4; color: #00b894; flex: 1; margin: 0 5px; }
+        .btn-auto { background: #fab1a0; color: #e17055; flex: 1; margin: 0 5px; }
+        .btn-auto.active { background: #ff7675; color: white; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <h1>⭐ Oliver's Vocabulary ⭐</h1>
+    
+    <div class="toolbar">
+        <button class="btn btn-mode" id="dictationToggle" onclick="toggleDictationMode()">✍️ 聽寫模式：關閉</button>
+        <button class="btn btn-shuffle" onclick="shuffleWords()">🔀 隨機挑戰</button>
+    </div>
+
+    <div class="card">
+        <div class="image-container">
+            <img id="wordImg" src="" alt="loading...">
+        </div>
+        
+        <button class="pronounce-btn" onclick="speakCurrent()">🔊</button>
+        <div class="word-display" id="wordText"></div>
+        
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="拼拼看..." autocomplete="off">
+            <div id="feedback" class="feedback"></div>
+        </div>
+
+        <div class="nav-btns">
+            <button class="btn btn-nav" onclick="prevWord()">上一個</button>
+            <button class="btn btn-auto" id="autoBtn" onclick="toggleAutoPlay()">▶️ 自動</button>
+            <button class="btn btn-nav" onclick="nextWord()">下一個</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const wordList = [
+        { word: "tree", img: "./images/tree.png" },
+        { word: "dragon", img: "./images/dragon.jpg"  },
+        { word: "fridge", img: "./images/fridge.jpg"  },
+        { word: "flamingo", img: "./images/flamingo.jpg"  },
+        { word: "spaceship", img: "./images/spaceship.jpg"  },
+        { word: "smile", img: "./images/smile.jpg"  },
+        { word: "steps", img: "./images/steps.jpg"  },
+        { word: "sneeze", img: "./images/sneeze.jpg"  },       
+    ];
+
+    let currentIndex = 0;
+    let isAutoPlaying = false;
+    let isDictationMode = false;
+    let autoTimer = null;
+
+    const wordText = document.getElementById('wordText');
+    const wordImg = document.getElementById('wordImg');
+    const userInput = document.getElementById('userInput');
+    const feedback = document.getElementById('feedback');
+    const dictationToggle = document.getElementById('dictationToggle');
+    const autoBtn = document.getElementById('autoBtn');
+
+    function updateCard() {
+        const currentData = wordList[currentIndex];
+        
+        wordImg.style.opacity = 0; 
+        wordImg.src = currentData.img;
+        wordImg.onload = () => { wordImg.style.opacity = 1; wordImg.style.transition = "0.3s"; };
+
+        userInput.value = "";
+        feedback.textContent = "";
+        
+        if (isDictationMode) {
+            wordText.textContent = "???";
+            wordText.classList.add('word-hidden');
+        } else {
+            wordText.textContent = currentData.word;
+            wordText.classList.remove('word-hidden');
+        }
+        
+        speakCurrent();
+    }
+
+    function toggleDictationMode() {
+        isDictationMode = !isDictationMode;
+        dictationToggle.textContent = isDictationMode ? "🔒 聽寫模式：開啟" : "✍️ 聽寫模式：關閉";
+        dictationToggle.classList.toggle('active', isDictationMode);
+        updateCard();
+    }
+
+    function speakCurrent() {
+        window.speechSynthesis.cancel();
+        const msg = new SpeechSynthesisUtterance(wordList[currentIndex].word);
+        msg.lang = 'en-US';
+        msg.rate = 0.65; 
+        msg.pitch = 1.1;
+        window.speechSynthesis.speak(msg);
+    }
+
+    function nextWord() {
+        currentIndex = (currentIndex + 1) % wordList.length;
+        updateCard();
+    }
+
+    function prevWord() {
+        currentIndex = (currentIndex - 1 + wordList.length) % wordList.length;
+        updateCard();
+    }
+
+    function shuffleWords() {
+        wordList.sort(() => Math.random() - 0.5);
+        currentIndex = 0;
+        updateCard();
+    }
+
+    function toggleAutoPlay() {
+        isAutoPlaying = !isAutoPlaying;
+        autoBtn.classList.toggle('active', isAutoPlaying);
+        if (isAutoPlaying) {
+            autoBtn.textContent = "⏸️ 停止";
+            autoTimer = setInterval(nextWord, isDictationMode ? 8000 : 5000);
+        } else {
+            autoBtn.textContent = "▶️ 自動";
+            clearInterval(autoTimer);
+        }
+    }
+
+    userInput.addEventListener('input', (e) => {
+        const target = wordList[currentIndex].word.toLowerCase();
+        const val = e.target.value.toLowerCase().trim();
+        
+        if (val === target) {
+            feedback.textContent = "🌟 做得好！";
+            feedback.style.color = "#00b894";
+            wordText.textContent = wordList[currentIndex].word;
+            wordText.classList.remove('word-hidden');
+        } else if (val === "") {
+            feedback.textContent = "";
+        } else if (target.startsWith(val)) {
+            feedback.textContent = "加油...";
+            feedback.style.color = "#f39c12";
+        } else {
+            feedback.textContent = "再試試看！";
+            feedback.style.color = "#e74c3c";
+        }
+    });
+
+    window.onload = updateCard;
+</script>
+
+</body>
+</html>
