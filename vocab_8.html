@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一年級英語發音教室：Blends</title>
+    <style>
+        :root {
+            --primary: #4a90e2;
+            --secondary: #f5a623;
+            --success: #7ed321;
+            --bg: #f0f4f8;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: var(--primary); }
+        .section { margin-bottom: 40px; }
+        
+        /* 單字卡樣式 */
+        .word-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
+        .word-card { background: #fff; border: 2px solid #eee; padding: 15px; border-radius: 10px; text-align: center; cursor: pointer; transition: 0.3s; }
+        .word-card:hover { border-color: var(--primary); transform: translateY(-3px); }
+        .word-text { font-size: 1.4rem; font-weight: bold; display: block; margin-bottom: 10px; }
+        .btn-audio { background: var(--primary); color: white; border: none; padding: 5px 15px; border-radius: 20px; cursor: pointer; }
+
+        /* 聽寫練習樣式 */
+        .quiz-box { background: #fff9db; padding: 20px; border-radius: 10px; border-left: 5px solid var(--secondary); }
+        .quiz-item { margin-bottom: 20px; }
+        input[type="text"] { padding: 8px; font-size: 1rem; border: 1px solid #ccc; border-radius: 5px; width: 120px; }
+        .feedback { font-weight: bold; margin-left: 10px; }
+        .correct { color: var(--success); }
+        .wrong { color: #d0021b; }
+        
+        .footer { text-align: center; font-size: 0.9rem; color: #888; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🔤 發音小教室 (Blends)</h1>
+    
+    <div class="section">
+        <h2>1. 點擊單字聽發音 (L & R Blends)</h2>
+        <div class="word-grid" id="learningGrid">
+            </div>
+    </div>
+
+    <hr>
+
+    <div class="section">
+        <h2>2. 聽寫小挑戰 (Dictation)</h2>
+        <p>請點擊喇叭圖示，並在框框輸入你聽到的單字：</p>
+        <div class="quiz-box" id="quizBox">
+            </div>
+        <div style="text-align: center; margin-top: 20px;">
+            <button onclick="checkAnswers()" style="padding: 10px 30px; font-size: 1.1rem; background: var(--success); color: white; border: none; border-radius: 5px; cursor: pointer;">檢查答案</button>
+        </div>
+    </div>
+</div>
+
+<div class="footer">本網頁採用系統語音，請確保喇叭已開啟。</div>
+
+<script>
+    const words = [
+        "skin", "skate", "spade", "skunk",  
+        "slippery", "sleep","sled","shed", 
+        "swings", "swan","sweat","swim", 
+	"twist", "thin","twelve","twin", 
+        
+    ];
+
+    // 初始化學習卡片
+    const grid = document.getElementById('learningGrid');
+    words.forEach(word => {
+        const card = document.createElement('div');
+        card.className = 'word-card';
+        card.onclick = () => speak(word);
+        card.innerHTML = `
+            <span class="word-text">${word}</span>
+            <button class="btn-audio">🔈 發音</button>
+        `;
+        grid.appendChild(card);
+    });
+
+    // 初始化聽寫題目 (隨機順序)
+    const quizBox = document.getElementById('quizBox');
+    const shuffledWords = [...words].sort(() => Math.random() - 0.5);
+    
+    shuffledWords.forEach((word, index) => {
+        const div = document.createElement('div');
+        div.className = 'quiz-item';
+        div.innerHTML = `
+            <span>第 ${index + 1} 題：</span>
+            <button class="btn-audio" onclick="speak('${word}')">🔈 播放</button>
+            <input type="text" id="input-${index}" placeholder="請拼寫..." autocomplete="off">
+            <span id="feedback-${index}" class="feedback"></span>
+        `;
+        quizBox.appendChild(div);
+    });
+
+    // 語音播放功能
+    function speak(text) {
+        window.speechSynthesis.cancel(); // 停止目前正在播放的聲音
+        const msg = new SpeechSynthesisUtterance(text);
+        msg.lang = 'en-US';
+        msg.rate = 0.8; // 速度稍微放慢，適合一年級學生
+        window.speechSynthesis.speak(msg);
+    }
+
+    // 檢查答案
+    function checkAnswers() {
+        shuffledWords.forEach((word, index) => {
+            const userInput = document.getElementById(`input-${index}`).value.trim().toLowerCase();
+            const feedback = document.getElementById(`feedback-${index}`);
+            
+            if (userInput === word.toLowerCase()) {
+                feedback.textContent = "✓ 正確！";
+                feedback.className = "feedback correct";
+            } else if (userInput === "") {
+                feedback.textContent = "";
+            } else {
+                feedback.textContent = `✗ 應為 ${word}`;
+                feedback.className = "feedback wrong";
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
