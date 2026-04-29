@@ -99,14 +99,30 @@
     });
 
     // 語音播放功能
-    function speak(text) {
+    function speakBrowser(text) {
         window.speechSynthesis.cancel(); // 停止目前正在播放的聲音
         const msg = new SpeechSynthesisUtterance(text);
         msg.lang = 'en-US';
         msg.rate = 0.8; // 速度稍微放慢，適合一年級學生
         window.speechSynthesis.speak(msg);
     }
-
+    //------------------------------
+	async function speak(word) {
+	    const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+	    const data = await response.json();
+	    
+	    // 尋找包含音檔連結的語音資料
+	    const audioUrl = data[0].phonetics.find(p => p.audio !== '')?.audio;
+	
+	    if (audioUrl) {
+	        const audio = new Audio(audioUrl);
+	        audio.play();
+	    } else {
+	        //console.log("找不到該單字的音檔");
+			speakBrowser(word);
+	    }
+	}
+	//------------------------------
     // 檢查答案
     function checkAnswers() {
         shuffledWords.forEach((word, index) => {
