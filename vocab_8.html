@@ -115,10 +115,11 @@
 	    const audioUrl = data[0].phonetics.find(p => p.audio !== '')?.audio;
 	
 	    if (audioUrl) {
+			console.log("使用dictionaryapi");
 	        const audio = new Audio(audioUrl);
 	        audio.play();
 	    } else {
-	        //console.log("找不到該單字的音檔");
+	        console.log("找不到該單字的音檔");
 			speakBrowser(word);
 	    }
 	}
