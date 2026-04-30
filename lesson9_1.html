@@ -1,0 +1,186 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Nunito', sans-serif; }
+  .app { padding: 1rem; max-width: 680px; margin: 0 auto; }
+  .title { text-align: center; font-size: 22px; font-weight: 800; color: var(--color-text-primary); margin-bottom: 4px; }
+  .subtitle { text-align: center; font-size: 14px; color: var(--color-text-secondary); margin-bottom: 1.5rem; }
+  .group-tabs { display: flex; gap: 8px; justify-content: center; margin-bottom: 1.25rem; flex-wrap: wrap; }
+  .tab { padding: 6px 18px; border-radius: 999px; border: 1.5px solid; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: 'Nunito', sans-serif; }
+  .tab-iː { border-color: #5DCAA5; color: #0F6E56; background: #E1F5EE; }
+  .tab-iː.active { background: #1D9E75; color: #fff; }
+  .tab-eɪ { border-color: #AFA9EC; color: #3C3489; background: #EEEDFE; }
+  .tab-eɪ.active { background: #534AB7; color: #fff; }
+  .tab-ʌ { border-color: #FAC775; color: #633806; background: #FAEEDA; }
+  .tab-ʌ.active { background: #BA7517; color: #fff; }
+  .phoneme-badge { display: inline-block; font-size: 18px; font-weight: 800; padding: 4px 16px; border-radius: 999px; margin-bottom: 1rem; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+  .word-card { background: var(--color-background-primary); border: 1.5px solid var(--color-border-tertiary); border-radius: 14px; padding: 1rem 0.75rem; text-align: center; cursor: pointer; transition: all 0.18s; position: relative; user-select: none; }
+  .word-card:hover { border-color: var(--color-border-secondary); transform: translateY(-2px); }
+  .word-card.playing { border-width: 2px; transform: scale(1.03); }
+  .word-card.playing.iː { border-color: #1D9E75; background: #E1F5EE; }
+  .word-card.playing.eɪ { border-color: #534AB7; background: #EEEDFE; }
+  .word-card.playing.ʌ { border-color: #BA7517; background: #FAEEDA; }
+  .emoji { font-size: 32px; margin-bottom: 6px; display: block; }
+  .en-word { font-size: 20px; font-weight: 800; color: var(--color-text-primary); letter-spacing: 0.5px; }
+  .phonetic { font-size: 12px; color: var(--color-text-secondary); margin: 2px 0; }
+  .zh-word { font-size: 14px; color: var(--color-text-secondary); font-weight: 600; margin-top: 4px; }
+  .spelling-tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; margin-top: 6px; }
+  .sound-btn { position: absolute; top: 8px; right: 8px; font-size: 16px; width: 28px; height: 28px; border-radius: 50%; border: none; background: var(--color-background-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
+  .sound-btn:hover { background: var(--color-border-tertiary); }
+  .group-label { font-size: 13px; font-weight: 700; color: var(--color-text-secondary); text-align: center; margin-bottom: 0.75rem; }
+  .tip-box { background: var(--color-background-secondary); border-radius: 12px; padding: 0.75rem 1rem; font-size: 13px; color: var(--color-text-secondary); text-align: center; line-height: 1.6; }
+  .tip-box strong { color: var(--color-text-primary); }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .err { font-size: 11px; color: #E24B4A; margin-top: 3px; }
+</style>
+
+<div class="app">
+  <h1 class="title">🔤 英文發音練習</h1>
+  <p class="subtitle">點擊單字卡，聽聽看怎麼發音！</p>
+
+  <div class="group-tabs">
+    <button class="tab tab-iː active" onclick="setGroup('iː')">🟢 /iː/ 長音</button>
+    <button class="tab tab-eɪ" onclick="setGroup('eɪ')">🟣 /eɪ/ 音</button>
+    <button class="tab tab-ʌ" onclick="setGroup('ʌ')">🟡 /ʌ/ 音</button>
+  </div>
+
+  <div id="card-area"></div>
+
+  <div class="tip-box" id="tip-box">
+    💡 點一下單字卡就能聽發音，注意看拼法有什麼不同喔！
+  </div>
+</div>
+
+<script>
+const groups = {
+  'iː': {
+    label: '這些字母組合，都發同一個 /iː/ 的聲音！',
+    color: 'iː',
+    badge: { bg: '#E1F5EE', color: '#0F6E56' },
+    spelling: { bg: '#9FE1CB', color: '#085041' },
+    tip: '📝 <strong>ea</strong>（meat）、<strong>ee</strong>（sheep）、<strong>ey</strong>（key）— 三種拼法，同一個音！',
+    words: [
+      { en: 'meat', zh: '肉', ph: '/miːt/', emoji: '🥩', spell: 'ea' },
+      { en: 'seat', zh: '座位', ph: '/siːt/', emoji: '💺', spell: 'ea' },
+      { en: 'sheep', zh: '羊', ph: '/ʃiːp/', emoji: '🐑', spell: 'ee' },
+      { en: 'reed', zh: '蘆葦', ph: '/riːd/', emoji: '🌾', spell: 'ee' },
+      { en: 'key', zh: '鑰匙', ph: '/kiː/', emoji: '🔑', spell: 'ey' },
+    ]
+  },
+  'eɪ': {
+    label: '這些字母組合，都發同一個 /eɪ/ 的聲音！',
+    color: 'eɪ',
+    badge: { bg: '#EEEDFE', color: '#3C3489' },
+    spelling: { bg: '#CECBF6', color: '#26215C' },
+    tip: '📝 <strong>ay</strong>（hay, day）、<strong>ai</strong>（train, afraid）— 兩種拼法，同一個音！',
+    words: [
+      { en: 'hay', zh: '乾草', ph: '/heɪ/', emoji: '🌾', spell: 'ay' },
+      { en: 'day', zh: '白天', ph: '/deɪ/', emoji: '☀️', spell: 'ay' },
+      { en: 'train', zh: '火車', ph: '/treɪn/', emoji: '🚂', spell: 'ai' },
+      { en: 'afraid', zh: '害怕的', ph: '/əˈfreɪd/', emoji: '😨', spell: 'ai' },
+    ]
+  },
+  'ʌ': {
+    label: '這些字母組合，都發同一個 /ʌ/ 的聲音！',
+    color: 'ʌ',
+    badge: { bg: '#FAEEDA', color: '#633806' },
+    spelling: { bg: '#FAC775', color: '#412402' },
+    tip: '📝 <strong>o</strong>（money, mother, son）、<strong>ou</strong>（young, cousin）— 不同拼法，同一個音！',
+    words: [
+      { en: 'money', zh: '錢', ph: '/ˈmʌni/', emoji: '💰', spell: 'o' },
+      { en: 'mother', zh: '媽媽', ph: '/ˈmʌðər/', emoji: '👩', spell: 'o' },
+      { en: 'son', zh: '兒子', ph: '/sʌn/', emoji: '👦', spell: 'o' },
+      { en: 'young', zh: '年輕的', ph: '/jʌŋ/', emoji: '🌱', spell: 'ou' },
+      { en: 'cousin', zh: '表兄弟姊妹', ph: '/ˈkʌzən/', emoji: '👨‍👩‍👧‍👦', spell: 'ou' },
+    ]
+  }
+};
+
+let currentGroup = 'iː';
+let currentAudio = null;
+
+function setGroup(g) {
+  currentGroup = g;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.tab-${CSS.escape(g)}`).classList.add('active');
+  render();
+}
+
+function render() {
+  const g = groups[currentGroup];
+  const area = document.getElementById('card-area');
+  const tip = document.getElementById('tip-box');
+  tip.innerHTML = '💡 ' + g.tip;
+
+  let html = `<p class="group-label">${g.label}</p><div class="grid">`;
+  g.words.forEach((w, i) => {
+    html += `
+      <div class="word-card ${g.color}" id="card-${i}" onclick="speak('${w.en}', ${i})">
+        <button class="sound-btn" id="btn-${i}" aria-label="播放發音">🔊</button>
+        <span class="emoji">${w.emoji}</span>
+        <div class="en-word">${w.en}</div>
+        <div class="phonetic">${w.ph}</div>
+        <div class="zh-word">${w.zh}</div>
+        <span class="spelling-tag" style="background:${g.spelling.bg};color:${g.spelling.color}">${w.spell}</span>
+        <div class="err" id="err-${i}"></div>
+      </div>`;
+  });
+  html += '</div>';
+  area.innerHTML = html;
+}
+
+function speak(word, idx) {
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+  const card = document.getElementById('card-' + idx);
+  const btn = document.getElementById('btn-' + idx);
+  const err = document.getElementById('err-' + idx);
+  err.textContent = '';
+
+  document.querySelectorAll('.word-card').forEach(c => c.classList.remove('playing'));
+  card.classList.add('playing');
+  btn.innerHTML = '<span class="spinner"></span>';
+
+  const url = `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`;
+  fetch(url)
+    .then(r => r.json())
+    .then(data => {
+      let audioUrl = null;
+      for (const entry of data) {
+        for (const ph of (entry.phonetics || [])) {
+          if (ph.audio && ph.audio.trim()) { audioUrl = ph.audio; break; }
+        }
+        if (audioUrl) break;
+      }
+      btn.textContent = '🔊';
+      if (audioUrl) {
+        const audio = new Audio(audioUrl);
+        currentAudio = audio;
+        audio.play();
+        audio.onended = () => card.classList.remove('playing');
+      } else {
+        fallbackTTS(word, card);
+      }
+    })
+    .catch(() => {
+      btn.textContent = '🔊';
+      fallbackTTS(word, card);
+    });
+}
+
+function fallbackTTS(word, card) {
+  if ('speechSynthesis' in window) {
+    const utter = new SpeechSynthesisUtterance(word);
+    utter.lang = 'en-US';
+    utter.rate = 0.85;
+    utter.onend = () => card.classList.remove('playing');
+    speechSynthesis.speak(utter);
+  } else {
+    card.classList.remove('playing');
+  }
+}
+
+render();
+</script>
