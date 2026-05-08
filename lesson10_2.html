@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>單字學習卡 - v3</title>
+<title>單字學習卡 - v2</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -84,7 +84,7 @@
 <body>
 
 <div class="header">
-  <h1>🔤 英文發音練習 v3</h1>
+  <h1>🔤 英文發音練習 v2</h1>
   <p style="color:var(--muted)">Lesson 10: oe, oa, ow / ue, ui</p>
 </div>
 
@@ -179,7 +179,7 @@ function playTone(freq, type, duration , volumn) {
 // 模擬「叮咚」 (兩個高頻音)
 const playCorrectSfx = () => {
     playTone(440, 'sine', 0.2 , 0.2); 
-    setTimeout(() => playTone(660, 'sine', 0.3), 150 , 0.2 );
+    setTimeout(() => playTone(660, 'sine', 0.3 , 0.2), 150 );
 };
 
 // 模擬「恩恩~~」 (低頻鋸齒波)
