@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>英文發音練習 - Lesson 10_2 Modified</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Nunito', sans-serif; background-color: #f8f9fa; }
+    .app { padding: 1rem; max-width: 680px; margin: 0 auto; }
+    .title { text-align: center; font-size: 22px; font-weight: 800; color: #2d3436; margin-bottom: 4px; }
+    .subtitle { text-align: center; font-size: 14px; color: #636e72; margin-bottom: 1.5rem; }
+    
+    .group-tabs { display: flex; gap: 8px; justify-content: center; margin-bottom: 1.25rem; flex-wrap: wrap; }
+    .tab { padding: 6px 18px; border-radius: 999px; border: 1.5px solid; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: 'Nunito', sans-serif; }
+    
+    .tab-oʊ { border-color: #FDAD5C; color: #814F1D; background: #FFF4E6; }
+    .tab-oʊ.active { background: #F39C12; color: #fff; }
+    .tab-uː { border-color: #5DADE2; color: #1B4F72; background: #EBF5FB; }
+    .tab-uː.active { background: #3498DB; color: #fff; }
+
+    /* 分行排版樣式 */
+    .row-label { font-size: 14px; font-weight: 800; color: #f39c12; margin: 15px 0 8px 5px; border-left: 4px solid #f39c12; padding-left: 8px; }
+    .row-label.u-style { color: #3498DB; border-left-color: #3498DB; }
+    
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+    
+    .word-card { background: #fff; border: 1.5px solid #dfe6e9; border-radius: 14px; padding: 1rem 0.5rem; text-align: center; cursor: pointer; transition: all 0.18s; position: relative; user-select: none; }
+    .word-card:hover { border-color: #b2bec3; transform: translateY(-2px); }
+    .word-card.playing { border-width: 2px; transform: scale(1.03); }
+    .word-card.playing.oʊ { border-color: #F39C12; background: #FFF4E6; }
+    .word-card.playing.uː { border-color: #3498DB; background: #EBF5FB; }
+
+    .emoji { font-size: 30px; margin-bottom: 4px; display: block; }
+    .en-word { font-size: 18px; font-weight: 800; color: #2d3436; }
+    .phonetic { font-size: 11px; color: #636e72; }
+    .zh-word { font-size: 13px; color: #636e72; margin-top: 4px; }
+    
+    .sound-btn { position: absolute; top: 6px; right: 6px; font-size: 14px; width: 24px; height: 24px; border-radius: 50%; border: none; background: #f1f2f6; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .tip-box { background: #f1f2f6; border-radius: 12px; padding: 0.75rem 1rem; font-size: 13px; color: #636e72; text-align: center; line-height: 1.6; }
+    .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <h1 class="title">🔤 英文發音練習</h1>
+  <p class="subtitle">依拼寫規律分類練習</p>
+
+  <div class="group-tabs">
+    <button class="tab tab-oʊ active" onclick="setGroup('oʊ')">🟠 /oʊ/ 音</button>
+    <button class="tab tab-uː" onclick="setGroup('uː')">🔵 /uː/ 音</button>
+  </div>
+
+  <div id="card-area"></div>
+
+  <div class="tip-box" id="tip-box">
+    💡 點擊單字聽發音，觀察不同拼法產生的相同聲音。
+  </div>
+</div>
+
+<script>
+const groups = {
+  'oʊ': {
+    color: 'oʊ',
+    tip: '📝 這裡的單字拼法不同，但發音都是 <strong>/oʊ/</strong> (像 Oh!)',
+    sections: [
+      { label: '拼法 1: -oe', words: [
+        { en: 'doe', zh: '母鹿', ph: '/doʊ/', emoji: '🦌' },
+        { en: 'toe', zh: '腳趾', ph: '/toʊ/', emoji: '🦶' },
+        { en: 'hoe', zh: '鋤頭', ph: '/hoʊ/', emoji: '⛏️' }
+      ]},
+      { label: '拼法 2: -oa-', words: [
+        { en: 'boat', zh: '船', ph: '/boʊt/', emoji: '⛵' },
+        { en: 'coat', zh: '外套', ph: '/koʊt/', emoji: '🧥' },
+        { en: 'soap', zh: '肥皂', ph: '/soʊp/', emoji: '🧼' }
+      ]},
+      { label: '拼法 3: -ow', words: [
+        { en: 'window', zh: '窗戶', ph: '/ˈwɪndoʊ/', emoji: '🪟' },
+        { en: 'elbow', zh: '手肘', ph: '/ˈelboʊ/', emoji: '💪' },
+        { en: 'blow', zh: '吹', ph: '/bloʊ/', emoji: '🌬️' },
+        { en: 'snow', zh: '雪', ph: '/snoʊ/', emoji: '❄️' }
+      ]}
+    ]
+  },
+  'uː': {
+    color: 'uː',
+    tip: '📝 這裡的單字發音都是長音 <strong>/uː/</strong> (像 Moo!)',
+    sections: [
+      { label: '拼法 1: -ue', words: [
+        { en: 'clue', zh: '線索', ph: '/kluː/', emoji: '🔍' },
+        { en: 'blue', zh: '藍色', ph: '/bluː/', emoji: '🟦' },
+        { en: 'glue', zh: '膠水', ph: '/ɡluː/', emoji: '🧪' }
+      ]},
+      { label: '拼法 2: -ui-', words: [
+        { en: 'juice', zh: '果汁', ph: '/dʒuːs/', emoji: '🍹' },
+        { en: 'suit', zh: '西裝', ph: '/suːt/', emoji: '👔' },
+        { en: 'fruit', zh: '水果', ph: '/fruːt/', emoji: '🍎' }
+      ]}
+    ]
+  }
+};
+
+let currentGroup = 'oʊ';
+let currentAudio = null;
+
+function setGroup(g) {
+  currentGroup = g;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.tab-${CSS.escape(g)}`).classList.add('active');
+  render();
+}
+
+function render() {
+  const g = groups[currentGroup];
+  const area = document.getElementById('card-area');
+  const tip = document.getElementById('tip-box');
+  tip.innerHTML = '💡 ' + g.tip;
+
+  let html = '';
+  g.sections.forEach((section, sIdx) => {
+    html += `<div class="row-label ${currentGroup === 'uː' ? 'u-style' : ''}">${section.label}</div>`;
+    html += `<div class="grid">`;
+    section.words.forEach((w, wIdx) => {
+      const id = `s${sIdx}w${wIdx}`;
+      html += `
+        <div class="word-card ${g.color}" id="card-${id}" onclick="speak('${w.en}', '${id}')">
+          <button class="sound-btn" id="btn-${id}">🔊</button>
+          <span class="emoji">${w.emoji}</span>
+          <div class="en-word">${w.en}</div>
+          <div class="phonetic">${w.ph}</div>
+          <div class="zh-word">${w.zh}</div>
+        </div>`;
+    });
+    html += `</div>`;
+  });
+  area.innerHTML = html;
+}
+
+function speak(word, id) {
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+  const card = document.getElementById('card-' + id);
+  const btn = document.getElementById('btn-' + id);
+
+  document.querySelectorAll('.word-card').forEach(c => c.classList.remove('playing'));
+  card.classList.add('playing');
+  btn.innerHTML = '<span class="spinner"></span>';
+
+  fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`)
+    .then(r => r.json())
+    .then(data => {
+      let audioUrl = null;
+      if (Array.isArray(data)) {
+        for (const entry of data) {
+          for (const ph of (entry.phonetics || [])) {
+            if (ph.audio) { audioUrl = ph.audio; break; }
+          }
+          if (audioUrl) break;
+        }
+      }
+      btn.textContent = '🔊';
+      if (audioUrl) {
+        currentAudio = new Audio(audioUrl);
+        currentAudio.play();
+        currentAudio.onended = () => card.classList.remove('playing');
+      } else {
+        fallbackTTS(word, card);
+      }
+    })
+    .catch(() => {
+      btn.textContent = '🔊';
+      fallbackTTS(word, card);
+    });
+}
+
+function fallbackTTS(word, card) {
+  if ('speechSynthesis' in window) {
+    const utter = new SpeechSynthesisUtterance(word);
+    utter.lang = 'en-US';
+    utter.onend = () => card.classList.remove('playing');
+    speechSynthesis.speak(utter);
+  } else {
+    card.classList.remove('playing');
+  }
+}
+
+render();
+</script>
+
+</body>
+</html>

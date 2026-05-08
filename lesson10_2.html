@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>單字學習卡 - 投影片模式 (圖片版)</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F8F9FA;
+    --ink: #2D3436;
+    --yellow: #F39C12;
+    --blue: #3498DB;
+    --muted: #636E72;
+    --soft: #DFE6E9;
+    --white: #FFFFFF;
+    --card-w: min(400px, 90vw);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Nunito', sans-serif;
+    display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+    padding: 20px;
+  }
+  .header { text-align: center; margin-bottom: 20px; }
+  .header h1 { font-size: 1.5rem; font-weight: 800; }
+  
+  .mode-switch { display: flex; gap: 10px; margin-bottom: 20px; }
+  .tab-btn { padding: 8px 20px; border-radius: 20px; border: 2px solid var(--soft); background: var(--white); cursor: pointer; font-weight: 700; }
+  .tab-btn.active { background: var(--ink); color: var(--white); border-color: var(--ink); }
+
+  #card-mode { width: var(--card-w); text-align: center; }
+  
+  .slide-container {
+    background: var(--white); border: 3px solid var(--soft); border-radius: 30px; 
+    padding: 40px 20px; position: relative; margin-bottom: 25px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05); transition: border-color 0.3s;
+    min-height: 380px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .slide-container.playing-o { border-color: var(--yellow); background: #FFF4E6; }
+  .slide-container.playing-u { border-color: var(--blue); background: #EBF5FB; }
+
+  .spell-badge {
+    position: absolute; top: 20px; left: 20px;
+    padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 800; color: white;
+  }
+  .badge-o { background: var(--yellow); }
+  .badge-u { background: var(--blue); }
+
+  /* 圖片樣式 */
+  .word-img {
+    width: 200px; height: 200px; object-fit: contain; margin-bottom: 15px;
+    border-radius: 15px; cursor: pointer;
+  }
+  .emoji-fallback { font-size: 5rem; display: block; margin-bottom: 15px; cursor: pointer; }
+
+  .en { font-size: 2.2rem; font-weight: 800; letter-spacing: 1px; color: #2d3436; margin-bottom: 5px; }
+  .zh { font-size: 1.2rem; color: var(--muted); font-weight: 600; }
+
+  .controls { display: flex; justify-content: space-between; align-items: center; gap: 15px; }
+  .nav-btn {
+    flex: 1; padding: 12px; border-radius: 15px; border: none;
+    background: var(--ink); color: white; font-weight: 700; cursor: pointer;
+  }
+  .nav-btn:disabled { background: var(--soft); color: var(--muted); cursor: not-allowed; }
+  .counter { font-weight: 800; color: var(--muted); font-size: 0.9rem; min-width: 60px; }
+
+  .spinner { 
+    display: none; position: absolute; top: 20px; right: 20px;
+    width: 18px; height: 18px; border: 3px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; 
+  }
+  .loading .spinner { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #quiz-mode, #score-box { display: none; width: var(--card-w); text-align: center; }
+  .quiz-card { background: var(--white); padding: 35px 25px; border-radius: 28px; box-shadow: 0 15px 30px rgba(0,0,0,0.08); }
+  .quiz-btn { width: 80px; height: 80px; border-radius: 50%; background: var(--yellow); border: none; color: white; font-size: 2rem; cursor: pointer; margin-bottom: 20px; }
+  .options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+  .opt { padding: 12px; border-radius: 12px; border: 2px solid var(--soft); background: white; cursor: pointer; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🔤 英文發音練習</h1>
+  <p style="color:var(--muted)">Lesson 10: oe, oa, ow / ue, ui</p>
+</div>
+
+<div class="mode-switch">
+  <button class="tab-btn active" id="tab-card" onclick="switchMode('card')">學習卡</button>
+  <button class="tab-btn" id="tab-quiz" onclick="switchMode('quiz')">聽力測驗</button>
+</div>
+
+<div id="card-mode">
+  <div class="slide-container" id="slide-box" onclick="playCurrentSlide()">
+    <div class="spinner"></div>
+    <div id="spell-badge" class="spell-badge"></div>
+    
+    <div id="media-area"></div>
+    
+    <div id="slide-en" class="en"></div>
+    <div id="slide-zh" class="zh"></div>
+    <p style="font-size: 0.8rem; color: var(--muted); margin-top: 10px;">💡 點選卡片可重複播放聲音</p>
+  </div>
+
+  <div class="controls">
+    <button class="nav-btn" id="prev-btn" onclick="changeSlide(-1)">上一頁</button>
+    <div class="counter" id="counter">1 / 16</div>
+    <button class="nav-btn" id="next-btn" onclick="changeSlide(1)">下一頁</button>
+  </div>
+</div>
+
+<div id="quiz-mode">
+  <div class="quiz-card">
+    <button class="quiz-btn" onclick="playQuizSound()">🔊</button>
+    <p>聽聲音，選出正確的單字</p>
+    <div class="options" id="quiz-options"></div>
+  </div>
+</div>
+
+<div id="score-box">
+  <div class="quiz-card">
+    <h2>測驗結束！</h2>
+    <h1 id="score-num" style="font-size:3.5rem; color:var(--yellow); margin: 15px 0;">0</h1>
+    <p id="score-total"></p>
+    <button class="tab-btn" style="margin-top:20px" onclick="location.reload()">重新挑戰</button>
+  </div>
+</div>
+
+<script>
+const wordData = [
+  { en: 'doe', zh: '母鹿', emoji: '🦌', img: './images/doe.jpg', spell: 'oe', type: 'o' },
+  { en: 'toe', zh: '腳趾', emoji: '🦶', img: './images/toe.jpg', spell: 'oe', type: 'o' },
+  { en: 'hoe', zh: '鋤頭', emoji: '⛏️', img: './images/hoe.jpg', spell: 'oe', type: 'o' },
+  { en: 'boat', zh: '船', emoji: '⛵', img: './images/boat.jpg', spell: 'oa', type: 'o' },
+  { en: 'coat', zh: '外套', emoji: '🧥', img: './images/coat.jpg', spell: 'oa', type: 'o' },
+  { en: 'soap', zh: '肥皂', emoji: '🧼', img: './images/soap.jpg', spell: 'oa', type: 'o' },
+  { en: 'window', zh: '窗戶', emoji: '🪟', img: './images/window.jpg', spell: 'ow', type: 'o' },
+  { en: 'elbow', zh: '手肘', emoji: '💪', img: './images/elbow.jpg', spell: 'ow', type: 'o' },
+  { en: 'blow', zh: '吹氣', emoji: '🌬️', img: './images/blow.jpg', spell: 'ow', type: 'o' },
+  { en: 'snow', zh: '雪', emoji: '❄️', img: './images/snow.jpg', spell: 'ow', type: 'o' },
+  { en: 'clue', zh: '線索', emoji: '🔍', img: './images/clue.jpg', spell: 'ue', type: 'u' },
+  { en: 'blue', zh: '藍色', emoji: '🟦', img: './images/blue.jpg', spell: 'ue', type: 'u' },
+  { en: 'glue', zh: '膠水', emoji: '🧪', img: './images/glue.jpg', spell: 'ue', type: 'u' },
+  { en: 'juice', zh: '果汁', emoji: '🍹', img: './images/juice.jpg', spell: 'ui', type: 'u' },
+  { en: 'suit', zh: '西裝', emoji: '👔', img: './images/suit.jpg', spell: 'ui', type: 'u' },
+  { en: 'fruit', zh: '水果', emoji: '🍎', img: './images/fruit.jpg', spell: 'ui', type: 'u' }
+];
+
+let currentIdx = 0;
+let currentAudio = null;
+let quizIdx = 0;
+let score = 0;
+let quizList = [];
+
+updateSlide();
+
+function updateSlide() {
+  const w = wordData[currentIdx];
+  const mediaArea = document.getElementById('media-area');
+  
+  // 顯示圖片，若加載失敗則顯示 Emoji
+  mediaArea.innerHTML = `<img src="${w.img}" class="word-img" onerror="this.style.display='none'; document.getElementById('fallback-emoji').style.display='block'">
+                         <span id="fallback-emoji" class="emoji-fallback" style="display:none">${w.emoji}</span>`;
+  
+  document.getElementById('slide-en').innerText = w.en;
+  document.getElementById('slide-zh').innerText = w.zh;
+  document.getElementById('counter').innerText = `${currentIdx + 1} / ${wordData.length}`;
+  
+  const badge = document.getElementById('spell-badge');
+  badge.innerText = `拼法: -${w.spell}`;
+  badge.className = `spell-badge ${w.type === 'u' ? 'badge-u' : 'badge-o'}`;
+  
+  document.getElementById('prev-btn').disabled = currentIdx === 0;
+  document.getElementById('next-btn').disabled = currentIdx === wordData.length - 1;
+  
+  playCurrentSlide();
+}
+
+function changeSlide(step) {
+  currentIdx += step;
+  updateSlide();
+}
+
+function playCurrentSlide() {
+  const w = wordData[currentIdx];
+  speak(w.en, 'slide-box', w.type);
+}
+
+function speak(word, boxId, type) {
+  if (currentAudio) { currentAudio.pause(); }
+  const box = document.getElementById(boxId);
+  const playClass = type === 'u' ? 'playing-u' : 'playing-o';
+  
+  if (box) box.classList.add('loading', playClass);
+
+  fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`)
+    .then(r => r.json())
+    .then(data => {
+      let audioUrl = "";
+      if (Array.isArray(data)) {
+        for (let entry of data) {
+          for (let ph of (entry.phonetics || [])) {
+            if (ph.audio) { audioUrl = ph.audio; break; }
+          }
+          if (audioUrl) break;
+        }
+      }
+      if (audioUrl) {
+        currentAudio = new Audio(audioUrl);
+        currentAudio.play();
+        currentAudio.onended = () => box.classList.remove('loading', playClass);
+      } else {
+        fallbackTTS(word, box, playClass);
+      }
+    })
+    .catch(() => fallbackTTS(word, box, playClass));
+}
+
+function fallbackTTS(word, box, playClass) {
+  const utter = new SpeechSynthesisUtterance(word);
+  utter.lang = 'en-US';
+  utter.onend = () => { if(box) box.classList.remove('loading', playClass); };
+  window.speechSynthesis.speak(utter);
+}
+
+function switchMode(mode) {
+  document.getElementById('tab-card').classList.toggle('active', mode === 'card');
+  document.getElementById('tab-quiz').classList.toggle('active', mode === 'quiz');
+  document.getElementById('card-mode').style.display = mode === 'card' ? 'block' : 'none';
+  document.getElementById('quiz-mode').style.display = mode === 'quiz' ? 'block' : 'none';
+  document.getElementById('score-box').style.display = 'none';
+  if(mode === 'quiz') startQuiz();
+}
+
+function startQuiz() {
+  quizIdx = 0; score = 0;
+  quizList = [...wordData].sort(() => Math.random() - 0.5);
+  showQuiz();
+}
+
+function showQuiz() {
+  if(quizIdx >= quizList.length) {
+    document.getElementById('quiz-mode').style.display = 'none';
+    document.getElementById('score-box').style.display = 'block';
+    document.getElementById('score-num').innerText = score;
+    document.getElementById('score-total').innerText = `共答對 ${score} / ${quizList.length} 題`;
+    return;
+  }
+  const current = quizList[quizIdx];
+  const options = [current.en];
+  while(options.length < 4) {
+    const r = wordData[Math.floor(Math.random()*wordData.length)].en;
+    if(!options.includes(r)) options.push(r);
+  }
+  options.sort(() => Math.random() - 0.5);
+  document.getElementById('quiz-options').innerHTML = options.map(o => `<div class="opt" onclick="checkAnswer('${o}')">${o}</div>`).join('');
+  setTimeout(playQuizSound, 500);
+}
+
+function playQuizSound() {
+  const current = quizList[quizIdx];
+  speak(current.en, null, current.type);
+}
+
+function checkAnswer(ans) {
+  if(ans === quizList[quizIdx].en) score++;
+  quizIdx++;
+  showQuiz();
+}
+</script>
+</body>
+</html>
