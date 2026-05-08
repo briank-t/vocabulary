@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>單字學習卡 - 投影片模式 (圖片版)</title>
+<title>單字學習卡 - 音效優化版</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -11,6 +11,8 @@
     --ink: #2D3436;
     --yellow: #F39C12;
     --blue: #3498DB;
+    --green: #27AE60;
+    --red: #E74C3C;
     --muted: #636E72;
     --soft: #DFE6E9;
     --white: #FFFFFF;
@@ -28,7 +30,7 @@
   .header h1 { font-size: 1.5rem; font-weight: 800; }
   
   .mode-switch { display: flex; gap: 10px; margin-bottom: 20px; }
-  .tab-btn { padding: 8px 20px; border-radius: 20px; border: 2px solid var(--soft); background: var(--white); cursor: pointer; font-weight: 700; }
+  .tab-btn { padding: 8px 20px; border-radius: 20px; border: 2px solid var(--soft); background: var(--white); cursor: pointer; font-weight: 700; transition: 0.2s; }
   .tab-btn.active { background: var(--ink); color: var(--white); border-color: var(--ink); }
 
   #card-mode { width: var(--card-w); text-align: center; }
@@ -36,7 +38,7 @@
   .slide-container {
     background: var(--white); border: 3px solid var(--soft); border-radius: 30px; 
     padding: 40px 20px; position: relative; margin-bottom: 25px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.05); transition: border-color 0.3s;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05); transition: 0.3s;
     min-height: 380px; display: flex; flex-direction: column; align-items: center; justify-content: center;
   }
   .slide-container.playing-o { border-color: var(--yellow); background: #FFF4E6; }
@@ -49,36 +51,34 @@
   .badge-o { background: var(--yellow); }
   .badge-u { background: var(--blue); }
 
-  /* 圖片樣式 */
-  .word-img {
-    width: 200px; height: 200px; object-fit: contain; margin-bottom: 15px;
-    border-radius: 15px; cursor: pointer;
-  }
+  .word-img { width: 200px; height: 200px; object-fit: contain; margin-bottom: 15px; border-radius: 15px; cursor: pointer; }
   .emoji-fallback { font-size: 5rem; display: block; margin-bottom: 15px; cursor: pointer; }
 
   .en { font-size: 2.2rem; font-weight: 800; letter-spacing: 1px; color: #2d3436; margin-bottom: 5px; }
   .zh { font-size: 1.2rem; color: var(--muted); font-weight: 600; }
 
   .controls { display: flex; justify-content: space-between; align-items: center; gap: 15px; }
-  .nav-btn {
-    flex: 1; padding: 12px; border-radius: 15px; border: none;
-    background: var(--ink); color: white; font-weight: 700; cursor: pointer;
-  }
+  .nav-btn { flex: 1; padding: 12px; border-radius: 15px; border: none; background: var(--ink); color: white; font-weight: 700; cursor: pointer; }
   .nav-btn:disabled { background: var(--soft); color: var(--muted); cursor: not-allowed; }
-  .counter { font-weight: 800; color: var(--muted); font-size: 0.9rem; min-width: 60px; }
-
-  .spinner { 
-    display: none; position: absolute; top: 20px; right: 20px;
-    width: 18px; height: 18px; border: 3px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; 
-  }
-  .loading .spinner { display: block; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  .counter { font-weight: 800; color: var(--muted); font-size: 0.9rem; min-width: 60px; text-align: center; }
 
   #quiz-mode, #score-box { display: none; width: var(--card-w); text-align: center; }
-  .quiz-card { background: var(--white); padding: 35px 25px; border-radius: 28px; box-shadow: 0 15px 30px rgba(0,0,0,0.08); }
-  .quiz-btn { width: 80px; height: 80px; border-radius: 50%; background: var(--yellow); border: none; color: white; font-size: 2rem; cursor: pointer; margin-bottom: 20px; }
+  .quiz-card { background: var(--white); padding: 35px 25px; border-radius: 28px; box-shadow: 0 15px 30px rgba(0,0,0,0.08); position: relative; }
+  .quiz-btn { width: 80px; height: 80px; border-radius: 50%; background: var(--yellow); border: none; color: white; font-size: 2rem; cursor: pointer; margin-bottom: 20px; box-shadow: 0 5px 0 #d68910; }
+  
   .options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
-  .opt { padding: 12px; border-radius: 12px; border: 2px solid var(--soft); background: white; cursor: pointer; font-weight: 700; }
+  .opt { padding: 15px; border-radius: 12px; border: 2px solid var(--soft); background: white; cursor: pointer; font-weight: 700; transition: 0.2s; }
+  
+  .feedback-msg { height: 24px; margin-top: 15px; font-weight: 800; font-size: 1.1rem; }
+  .msg-correct { color: var(--green); }
+  .msg-wrong { color: var(--red); }
+  
+  .opt.correct { background: var(--green) !important; color: white !important; border-color: var(--green) !important; }
+  .opt.wrong { background: var(--red) !important; color: white !important; border-color: var(--red) !important; }
+
+  .spinner { display: none; position: absolute; top: 20px; right: 20px; width: 18px; height: 18px; border: 3px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; }
+  .loading .spinner { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -97,12 +97,10 @@
   <div class="slide-container" id="slide-box" onclick="playCurrentSlide()">
     <div class="spinner"></div>
     <div id="spell-badge" class="spell-badge"></div>
-    
     <div id="media-area"></div>
-    
     <div id="slide-en" class="en"></div>
     <div id="slide-zh" class="zh"></div>
-    <p style="font-size: 0.8rem; color: var(--muted); margin-top: 10px;">💡 點選卡片可重複播放聲音</p>
+    <p style="font-size: 0.8rem; color: var(--muted); margin-top: 15px;">💡 點選卡片可重複播放聲音</p>
   </div>
 
   <div class="controls">
@@ -115,8 +113,9 @@
 <div id="quiz-mode">
   <div class="quiz-card">
     <button class="quiz-btn" onclick="playQuizSound()">🔊</button>
-    <p>聽聲音，選出正確的單字</p>
+    <p style="font-weight:700; color:var(--muted)">聽聽看，這是哪個單字？</p>
     <div class="options" id="quiz-options"></div>
+    <div id="feedback" class="feedback-msg"></div>
   </div>
 </div>
 
@@ -124,7 +123,7 @@
   <div class="quiz-card">
     <h2>測驗結束！</h2>
     <h1 id="score-num" style="font-size:3.5rem; color:var(--yellow); margin: 15px 0;">0</h1>
-    <p id="score-total"></p>
+    <p>一次就答對的總分</p>
     <button class="tab-btn" style="margin-top:20px" onclick="location.reload()">重新挑戰</button>
   </div>
 </div>
@@ -153,29 +152,62 @@ let currentIdx = 0;
 let currentAudio = null;
 let quizIdx = 0;
 let score = 0;
+let isFirstTry = true;
 let quizList = [];
+
+
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playTone(freq, type, duration) {
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+
+    oscillator.type = type; // 'sine', 'square', 'sawtooth', 'triangle'
+    oscillator.frequency.value = freq;
+    
+    // 設定音量 (50%)
+    gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + duration);
+}
+
+// 模擬「叮咚」 (兩個高頻音)
+const playCorrectSfx = () => {
+    playTone(440, 'sine', 0.2); 
+    setTimeout(() => playTone(660, 'sine', 0.3), 150);
+};
+
+// 模擬「恩恩~~」 (低頻鋸齒波)
+const playWrongSfx = () => {
+    playTone(110, 'triangle', 0.5);
+};
+
+// 定義提示音效 (叮咚叮咚 / 恩恩~~) 並設定音量
+const sfxCorrect = new Audio('https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3'); // 類似叮咚
+const sfxWrong = new Audio('https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3');   // 類似恩恩
+sfxCorrect.volume = 0.2;
+sfxWrong.volume = 0.2;
 
 updateSlide();
 
 function updateSlide() {
   const w = wordData[currentIdx];
   const mediaArea = document.getElementById('media-area');
-  
-  // 顯示圖片，若加載失敗則顯示 Emoji
   mediaArea.innerHTML = `<img src="${w.img}" class="word-img" onerror="this.style.display='none'; document.getElementById('fallback-emoji').style.display='block'">
                          <span id="fallback-emoji" class="emoji-fallback" style="display:none">${w.emoji}</span>`;
-  
   document.getElementById('slide-en').innerText = w.en;
   document.getElementById('slide-zh').innerText = w.zh;
   document.getElementById('counter').innerText = `${currentIdx + 1} / ${wordData.length}`;
-  
   const badge = document.getElementById('spell-badge');
   badge.innerText = `拼法: -${w.spell}`;
   badge.className = `spell-badge ${w.type === 'u' ? 'badge-u' : 'badge-o'}`;
-  
   document.getElementById('prev-btn').disabled = currentIdx === 0;
   document.getElementById('next-btn').disabled = currentIdx === wordData.length - 1;
-  
   playCurrentSlide();
 }
 
@@ -190,10 +222,9 @@ function playCurrentSlide() {
 }
 
 function speak(word, boxId, type) {
-  if (currentAudio) { currentAudio.pause(); }
+  if (currentAudio) currentAudio.pause();
   const box = document.getElementById(boxId);
   const playClass = type === 'u' ? 'playing-u' : 'playing-o';
-  
   if (box) box.classList.add('loading', playClass);
 
   fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`)
@@ -211,7 +242,7 @@ function speak(word, boxId, type) {
       if (audioUrl) {
         currentAudio = new Audio(audioUrl);
         currentAudio.play();
-        currentAudio.onended = () => box.classList.remove('loading', playClass);
+        currentAudio.onended = () => { if(box) box.classList.remove('loading', playClass); };
       } else {
         fallbackTTS(word, box, playClass);
       }
@@ -246,9 +277,10 @@ function showQuiz() {
     document.getElementById('quiz-mode').style.display = 'none';
     document.getElementById('score-box').style.display = 'block';
     document.getElementById('score-num').innerText = score;
-    document.getElementById('score-total').innerText = `共答對 ${score} / ${quizList.length} 題`;
     return;
   }
+  isFirstTry = true;
+  document.getElementById('feedback').innerText = '';
   const current = quizList[quizIdx];
   const options = [current.en];
   while(options.length < 4) {
@@ -256,7 +288,9 @@ function showQuiz() {
     if(!options.includes(r)) options.push(r);
   }
   options.sort(() => Math.random() - 0.5);
-  document.getElementById('quiz-options').innerHTML = options.map(o => `<div class="opt" onclick="checkAnswer('${o}')">${o}</div>`).join('');
+  document.getElementById('quiz-options').innerHTML = options.map(o => 
+    `<div class="opt" onclick="checkAnswer(this, '${o}')">${o}</div>`
+  ).join('');
   setTimeout(playQuizSound, 500);
 }
 
@@ -265,10 +299,33 @@ function playQuizSound() {
   speak(current.en, null, current.type);
 }
 
-function checkAnswer(ans) {
-  if(ans === quizList[quizIdx].en) score++;
-  quizIdx++;
-  showQuiz();
+function checkAnswer(el, ans) {
+  const correctAns = quizList[quizIdx].en;
+  const feedback = document.getElementById('feedback');
+  
+  if(ans === correctAns) {
+    if(isFirstTry) score++;
+    el.classList.add('correct');
+    <!-- sfxCorrect.play(); -->
+    playCorrectSfx(); // 執行自製叮咚聲
+    feedback.innerHTML = '<span class="msg-correct">太棒了！正確答案 ✨</span>';
+    
+    setTimeout(() => {
+      quizIdx++;
+      showQuiz();
+    }, 1200);
+  } else {
+    isFirstTry = false;
+    el.classList.add('wrong');
+    <!--  sfxWrong.play(); -->
+    playWrongSfx(); // 執行自製恩恩聲
+    feedback.innerHTML = '<span class="msg-wrong">不對喔，再試一次！💪</span>';
+    
+    setTimeout(() => {
+      el.classList.remove('wrong');
+      feedback.innerText = '';
+    }, 1200);
+  }
 }
 </script>
 </body>
