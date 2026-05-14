@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>單字學習卡 - v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F8F9FA;
+    --ink: #2D3436;
+    --yellow: #F39C12;
+    --blue: #3498DB;
+    --green: #27AE60;
+    --red: #E74C3C;
+    --muted: #636E72;
+    --soft: #DFE6E9;
+    --white: #FFFFFF;
+    --card-w: min(400px, 90vw);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Nunito', sans-serif;
+    display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+    padding: 20px;
+  }
+  .header { text-align: center; margin-bottom: 20px; }
+  .header h1 { font-size: 1.5rem; font-weight: 800; }
+  
+  .mode-switch { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; justify-content: center; }
+  .tab-btn { padding: 8px 20px; border-radius: 20px; border: 2px solid var(--soft); background: var(--white); cursor: pointer; font-weight: 700; transition: 0.2s; }
+  .tab-btn.active { background: var(--ink); color: var(--white); border-color: var(--ink); }
+
+  /* TTS Toggle */
+  .tts-toggle-row { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+  .tts-label { font-size: 0.85rem; font-weight: 700; color: var(--muted); }
+  .toggle-group { display: flex; border: 2px solid var(--soft); border-radius: 20px; overflow: hidden; }
+  .toggle-opt { padding: 6px 14px; font-size: 0.8rem; font-weight: 700; cursor: pointer; background: var(--white); border: none; transition: 0.2s; color: var(--muted); }
+  .toggle-opt.active { background: var(--blue); color: white; }
+
+  #card-mode { width: var(--card-w); text-align: center; }
+  
+  .slide-container {
+    background: var(--white); border: 3px solid var(--soft); border-radius: 30px; 
+    padding: 40px 20px; position: relative; margin-bottom: 25px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05); transition: 0.3s;
+    min-height: 380px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .slide-container.playing-o { border-color: var(--yellow); background: #FFF4E6; }
+  .slide-container.playing-u { border-color: var(--blue); background: #EBF5FB; }
+
+  .spell-badge {
+    position: absolute; top: 20px; left: 20px;
+    padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 800; color: white;
+  }
+  .badge-o { background: var(--yellow); }
+  .badge-u { background: var(--blue); }
+
+  .word-img { width: 200px; height: 200px; object-fit: contain; margin-bottom: 15px; border-radius: 15px; cursor: pointer; }
+  .emoji-fallback { font-size: 5rem; display: block; margin-bottom: 15px; cursor: pointer; }
+
+  .en { font-size: 2.2rem; font-weight: 800; letter-spacing: 1px; color: #2d3436; margin-bottom: 5px; }
+  .zh { font-size: 1.2rem; color: var(--muted); font-weight: 600; }
+
+  .controls { display: flex; justify-content: space-between; align-items: center; gap: 15px; }
+  .nav-btn { flex: 1; padding: 12px; border-radius: 15px; border: none; background: var(--ink); color: white; font-weight: 700; cursor: pointer; }
+  .nav-btn:disabled { background: var(--soft); color: var(--muted); cursor: not-allowed; }
+  .counter { font-weight: 800; color: var(--muted); font-size: 0.9rem; min-width: 60px; text-align: center; }
+
+  #quiz-mode, #score-box { display: none; width: var(--card-w); text-align: center; }
+  .quiz-card { background: var(--white); padding: 35px 25px; border-radius: 28px; box-shadow: 0 15px 30px rgba(0,0,0,0.08); position: relative; }
+  .quiz-btn { width: 80px; height: 80px; border-radius: 50%; background: var(--yellow); border: none; color: white; font-size: 2rem; cursor: pointer; margin-bottom: 20px; box-shadow: 0 5px 0 #d68910; }
+  
+  .options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+  .opt { padding: 15px; border-radius: 12px; border: 2px solid var(--soft); background: white; cursor: pointer; font-weight: 700; transition: 0.2s; }
+  
+  .feedback-msg { height: 24px; margin-top: 15px; font-weight: 800; font-size: 1.1rem; }
+  .msg-correct { color: var(--green); }
+  .msg-wrong { color: var(--red); }
+  
+  .opt.correct { background: var(--green) !important; color: white !important; border-color: var(--green) !important; }
+  .opt.wrong { background: var(--red) !important; color: white !important; border-color: var(--red) !important; }
+
+  .spinner { display: none; position: absolute; top: 20px; right: 20px; width: 18px; height: 18px; border: 3px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; }
+  .loading .spinner { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* TTS mode indicator in card */
+  .tts-indicator {
+    position: absolute; top: 20px; right: 20px;
+    font-size: 0.72rem; font-weight: 700; color: var(--muted);
+    background: var(--soft); padding: 3px 9px; border-radius: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🔤 英文發音練習 v2</h1>
+  <p style="color:var(--muted)">Lesson: ie, y / aw, au</p>
+</div>
+
+<div class="mode-switch">
+  <button class="tab-btn active" id="tab-card" onclick="switchMode('card')">學習卡</button>
+  <button class="tab-btn" id="tab-quiz" onclick="switchMode('quiz')">聽力測驗</button>
+</div>
+
+<!-- TTS 切換按鈕 -->
+<div class="tts-toggle-row">
+  <span class="tts-label">🔊 發音來源：</span>
+  <div class="toggle-group">
+    <button class="toggle-opt active" id="tts-api" onclick="setTTS('api')">字典 API</button>
+    <button class="toggle-opt" id="tts-browser" onclick="setTTS('browser')">瀏覽器 TTS</button>
+  </div>
+</div>
+
+<div id="card-mode">
+  <div class="slide-container" id="slide-box" onclick="playCurrentSlide()">
+    <div class="spinner"></div>
+    <div id="spell-badge" class="spell-badge"></div>
+    <span class="tts-indicator" id="tts-mode-badge">API</span>
+    <div id="media-area"></div>
+    <div id="slide-en" class="en"></div>
+    <div id="slide-zh" class="zh"></div>
+    <p style="font-size: 0.8rem; color: var(--muted); margin-top: 15px;">💡 點選卡片可重複播放聲音</p>
+  </div>
+
+  <div class="controls">
+    <button class="nav-btn" id="prev-btn" onclick="changeSlide(-1)">上一頁</button>
+    <div class="counter" id="counter">1 / 16</div>
+    <button class="nav-btn" id="next-btn" onclick="changeSlide(1)">下一頁</button>
+  </div>
+</div>
+
+<div id="quiz-mode">
+  <div class="quiz-card">
+    <button class="quiz-btn" onclick="playQuizSound()">🔊</button>
+    <p style="font-weight:700; color:var(--muted)">聽聽看，這是哪個單字？</p>
+    <div class="options" id="quiz-options"></div>
+    <div id="feedback" class="feedback-msg"></div>
+  </div>
+</div>
+
+<div id="score-box">
+  <div class="quiz-card">
+    <h2>測驗結束！</h2>
+    <h1 id="score-num" style="font-size:3.5rem; color:var(--yellow); margin: 15px 0;">0</h1>
+    <p>一次就答對的總分</p>
+    <button class="tab-btn" style="margin-top:20px" onclick="location.reload()">重新挑戰</button>
+  </div>
+</div>
+
+<script>
+// ─── 單字資料 ───────────────────────────────────────────────
+const wordData = [
+  { en: 'lie',   zh: '說謊',  emoji: '🤥', img: './images/lie.jpg',   spell: 'ie', type: 'o' },
+  { en: 'die',   zh: '骰子',  emoji: '🎲', img: './images/die.jpg',   spell: 'ie', type: 'o' },
+  { en: 'pie',   zh: '派',    emoji: '🥧', img: './images/pie.jpg',   spell: 'ie', type: 'o' },
+  { en: 'tie',   zh: '領帶',  emoji: '👔', img: './images/tie.jpg',   spell: 'ie', type: 'o' },
+  { en: 'cry',   zh: '哭泣',  emoji: '😢', img: './images/cry.jpg',   spell: 'y',  type: 'o' },
+  { en: 'fry',   zh: '油炸',  emoji: '🍳', img: './images/fry.jpg',   spell: 'y',  type: 'o' },
+  { en: 'try',   zh: '嘗試',  emoji: '💪', img: './images/try.jpg',   spell: 'y',  type: 'o' },
+  { en: 'fly',   zh: '飛行',  emoji: '✈️', img: './images/fly.jpg',   spell: 'y',  type: 'o' },
+  { en: 'saw',   zh: '鋸子',  emoji: '🪚', img: './images/saw.jpg',   spell: 'aw', type: 'u' },
+  { en: 'law',   zh: '法律',  emoji: '⚖️', img: './images/law.jpg',   spell: 'aw', type: 'u' },
+  { en: 'paw',   zh: '爪子',  emoji: '🐾', img: './images/paw.jpg',   spell: 'aw', type: 'u' },
+  { en: 'draw',  zh: '畫畫',  emoji: '✏️', img: './images/draw.jpg',  spell: 'aw', type: 'u' },
+  { en: 'straw', zh: '吸管',  emoji: '🥤', img: './images/straw.jpg', spell: 'aw', type: 'u' },
+  { en: 'Claus', zh: '聖誕老人', emoji: '🎅', img: './images/claus.jpg', spell: 'au', type: 'u' },
+  { en: 'Paul',  zh: '保羅',  emoji: '👦', img: './images/paul.jpg',  spell: 'au', type: 'u' },
+  { en: 'sauce', zh: '醬汁',  emoji: '🍯', img: './images/sauce.jpg', spell: 'au', type: 'u' }
+];
+
+// ─── 狀態 ────────────────────────────────────────────────────
+let currentIdx = 0;
+let currentAudio = null;
+let quizIdx = 0;
+let score = 0;
+let isFirstTry = true;
+let quizList = [];
+let ttsMode = 'api'; // 'api' | 'browser'
+
+// ─── TTS 切換 ────────────────────────────────────────────────
+function setTTS(mode) {
+  ttsMode = mode;
+  document.getElementById('tts-api').classList.toggle('active', mode === 'api');
+  document.getElementById('tts-browser').classList.toggle('active', mode === 'browser');
+  document.getElementById('tts-mode-badge').innerText = mode === 'api' ? 'API' : '瀏覽器';
+}
+
+// ─── Web Audio 音效 ──────────────────────────────────────────
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playTone(freq, type, duration, volumn) {
+  const oscillator = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
+  oscillator.type = type;
+  oscillator.frequency.value = freq;
+  gainNode.gain.setValueAtTime(volumn, audioCtx.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+  oscillator.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+  oscillator.start();
+  oscillator.stop(audioCtx.currentTime + duration);
+}
+
+const playCorrectSfx = () => {
+  playTone(440, 'sine', 0.2, 0.2);
+  setTimeout(() => playTone(660, 'sine', 0.3, 0.2), 150);
+};
+
+const playWrongSfx = () => {
+  playTone(110, 'triangle', 0.5, 0.5);
+};
+
+// ─── 初始化 ──────────────────────────────────────────────────
+updateSlide();
+
+function updateSlide() {
+  const w = wordData[currentIdx];
+  const mediaArea = document.getElementById('media-area');
+  mediaArea.innerHTML = `<img src="${w.img}" class="word-img" onerror="this.style.display='none'; document.getElementById('fallback-emoji').style.display='block'">
+                         <span id="fallback-emoji" class="emoji-fallback" style="display:none">${w.emoji}</span>`;
+  document.getElementById('slide-en').innerText = w.en;
+  document.getElementById('slide-zh').innerText = w.zh;
+  document.getElementById('counter').innerText = `${currentIdx + 1} / ${wordData.length}`;
+  const badge = document.getElementById('spell-badge');
+  badge.innerText = `拼法: -${w.spell}`;
+  badge.className = `spell-badge ${w.type === 'u' ? 'badge-u' : 'badge-o'}`;
+  document.getElementById('prev-btn').disabled = currentIdx === 0;
+  document.getElementById('next-btn').disabled = currentIdx === wordData.length - 1;
+  playCurrentSlide();
+}
+
+function changeSlide(step) {
+  currentIdx += step;
+  updateSlide();
+}
+
+function playCurrentSlide() {
+  const w = wordData[currentIdx];
+  speak(w.en, 'slide-box', w.type);
+}
+
+// ─── 發音核心 ─────────────────────────────────────────────────
+function speak(word, boxId, type) {
+  if (currentAudio) currentAudio.pause();
+  const box = boxId ? document.getElementById(boxId) : null;
+  const playClass = type === 'u' ? 'playing-u' : 'playing-o';
+  if (box) box.classList.add('loading', playClass);
+
+  if (ttsMode === 'browser') {
+    // 直接使用瀏覽器 Web Speech API
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(word);
+    utter.lang = 'en-US';
+    utter.rate = 0.9;
+    utter.onend = () => { if (box) box.classList.remove('loading', playClass); };
+    window.speechSynthesis.speak(utter);
+    return;
+  }
+
+  // 字典 API 模式
+  fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`)
+    .then(r => r.json())
+    .then(data => {
+      let audioUrl = '';
+      if (Array.isArray(data)) {
+        for (let entry of data) {
+          for (let ph of (entry.phonetics || [])) {
+            if (ph.audio) { audioUrl = ph.audio; break; }
+          }
+          if (audioUrl) break;
+        }
+      }
+      if (audioUrl) {
+        // 修正：有些 URL 是 // 開頭，補上 https:
+        if (audioUrl.startsWith('//')) audioUrl = 'https:' + audioUrl;
+        currentAudio = new Audio(audioUrl);
+        currentAudio.play().catch(() => fallbackTTS(word, box, playClass));
+        currentAudio.onended = () => { if (box) box.classList.remove('loading', playClass); };
+      } else {
+        fallbackTTS(word, box, playClass);
+      }
+    })
+    .catch(() => fallbackTTS(word, box, playClass));
+}
+
+function fallbackTTS(word, box, playClass) {
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(word);
+  utter.lang = 'en-US';
+  utter.rate = 0.9;
+  utter.onend = () => { if (box) box.classList.remove('loading', playClass); };
+  window.speechSynthesis.speak(utter);
+}
+
+// ─── 模式切換 ─────────────────────────────────────────────────
+function switchMode(mode) {
+  document.getElementById('tab-card').classList.toggle('active', mode === 'card');
+  document.getElementById('tab-quiz').classList.toggle('active', mode === 'quiz');
+  document.getElementById('card-mode').style.display = mode === 'card' ? 'block' : 'none';
+  document.getElementById('quiz-mode').style.display = mode === 'quiz' ? 'block' : 'none';
+  document.getElementById('score-box').style.display = 'none';
+  if (mode === 'quiz') startQuiz();
+}
+
+// ─── 測驗邏輯 ─────────────────────────────────────────────────
+function startQuiz() {
+  quizIdx = 0; score = 0;
+  quizList = [...wordData].sort(() => Math.random() - 0.5);
+  showQuiz();
+}
+
+function showQuiz() {
+  if (quizIdx >= quizList.length) {
+    document.getElementById('quiz-mode').style.display = 'none';
+    document.getElementById('score-box').style.display = 'block';
+    document.getElementById('score-num').innerText = score;
+    return;
+  }
+  isFirstTry = true;
+  document.getElementById('feedback').innerText = '';
+  const current = quizList[quizIdx];
+  const options = [current.en];
+  while (options.length < 4) {
+    const r = wordData[Math.floor(Math.random() * wordData.length)].en;
+    if (!options.includes(r)) options.push(r);
+  }
+  options.sort(() => Math.random() - 0.5);
+  document.getElementById('quiz-options').innerHTML = options.map(o =>
+    `<div class="opt" onclick="checkAnswer(this, '${o}')">${o}</div>`
+  ).join('');
+  setTimeout(playQuizSound, 500);
+}
+
+function playQuizSound() {
+  const current = quizList[quizIdx];
+  speak(current.en, null, current.type);
+}
+
+function checkAnswer(el, ans) {
+  const correctAns = quizList[quizIdx].en;
+  const feedback = document.getElementById('feedback');
+
+  if (ans === correctAns) {
+    if (isFirstTry) score++;
+    el.classList.add('correct');
+    playCorrectSfx();
+    feedback.innerHTML = '<span class="msg-correct">太棒了！正確答案 ✨</span>';
+    setTimeout(() => { quizIdx++; showQuiz(); }, 1200);
+  } else {
+    isFirstTry = false;
+    el.classList.add('wrong');
+    playWrongSfx();
+    feedback.innerHTML = '<span class="msg-wrong">不對喔，再試一次！💪</span>';
+    setTimeout(() => { el.classList.remove('wrong'); feedback.innerText = ''; }, 1200);
+  }
+}
+</script>
+</body>
+</html>
