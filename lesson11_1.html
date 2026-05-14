@@ -186,7 +186,7 @@ function speak(word, id, type) {
   document.querySelectorAll('.word-card').forEach(c => c.classList.remove('playing'));
   card.classList.add('playing');
   
-  #playTone(587.33, 'sine', 0.08, 0.1); 
+  //playTone(587.33, 'sine', 0.08, 0.1); 
 
   // 如果使用者切換為使用 speak_browser 模式
   if (useBrowserTTS) {
