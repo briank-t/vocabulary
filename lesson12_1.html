@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>英文發音練習 - Lesson 12</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Nunito', sans-serif; background-color: #f8f9fa; }
+    .app { padding: 1rem; max-width: 680px; margin: 0 auto; }
+    
+    /* 頂部控制列排版 */
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 10px; }
+    .title-area { flex: 1; min-width: 200px; }
+    .title { font-size: 22px; font-weight: 800; color: #2d3436; margin-bottom: 4px; }
+    .subtitle { font-size: 14px; color: #636e72; }
+    
+    /* 發音切換按鈕樣式 */
+    .engine-toggle-btn { padding: 8px 16px; border-radius: 999px; border: 2px solid #b2bec3; background: white; color: #2d3436; font-size: 13px; font-weight: 800; cursor: pointer; transition: all 0.2s; font-family: 'Nunito', sans-serif; display: flex; align-items: center; gap: 6px; }
+    .engine-toggle-btn:hover { border-color: #2d3436; background: #f1f2f6; }
+    .engine-toggle-btn.mode-browser { border-color: #3498DB; color: #2980B9; background: #EBF5FB; }
+    
+    .group-tabs { display: flex; gap: 8px; justify-content: center; margin-bottom: 1.25rem; flex-wrap: wrap; }
+    .tab { padding: 6px 18px; border-radius: 999px; border: 1.5px solid; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: 'Nunito', sans-serif; }
+    
+    /* 分組頁籤顏色 */
+    .tab-au { border-color: #5DCAA5; color: #0F6E56; background: #E1F5EE; }
+    .tab-au.active { background: #1D9E75; color: white; }
+    .tab-oi { border-color: #FFB077; color: #A04000; background: #FFEFE3; }
+    .tab-oi.active { background: #E66A15; color: white; }
+
+    .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+    .word-card { border-radius: 16px; padding: 16px 12px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03); cursor: pointer; transition: transform 0.15s, border-color 0.15s, background-color 0.15s; position: relative; border: 2px solid; }
+    .word-card:hover { transform: translateY(-2px); }
+    
+    /* === 雙元音 /aʊ/ 頁面個別底色 === */
+    .card-spell-ow { background-color: #f0faf6; border-color: #caebd9; }
+    .card-spell-ow:hover { border-color: #9fe1cb; }
+    .card-spell-ow.playing { border-color: #1D9E75; background-color: #d1f2e5; }
+
+    .card-spell-ou { background-color: #f0f7ff; border-color: #cee2fa; }
+    .card-spell-ou:hover { border-color: #a3ccfa; }
+    .card-spell-ou.playing { border-color: #3498DB; background-color: #d6e9ff; }
+
+    /* === 雙元音 /ɔɪ/ 頁面個別底色 === */
+    .card-spell-oi { background-color: #fff7f0; border-color: #f7decb; }
+    .card-spell-oi:hover { border-color: #fac775; }
+    .card-spell-oi.playing { border-color: #E66A15; background-color: #ffebd9; }
+
+    .card-spell-oy { background-color: #f8f0ff; border-color: #ebd6fa; }
+    .card-spell-oy:hover { border-color: #d7b5f5; }
+    .card-spell-oy.playing { border-color: #9B5DE5; background-color: #ebd6fa; }
+
+    /* 小標籤拼法標記顏色 */
+    .badge { display: inline-block; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 8px; margin-bottom: 8px; color: white; }
+    .badge-ow { background-color: #2ec4b6; }
+    .badge-ou { background-color: #3498db; }
+    .badge-oi { background-color: #fb8500; }
+    .badge-oy { background-color: #9b5de5; }
+
+    .word-emoji { font-size: 42px; margin: 8px 0; display: block; }
+    .word-en { font-size: 24px; font-weight: 800; color: #2d3436; margin-bottom: 2px; }
+    .word-zh { font-size: 14px; font-weight: 600; color: #7f8c8d; }
+    .btn-audio { background: none; border: none; font-size: 18px; cursor: pointer; margin-top: 8px; outline: none; color: #7f8c8d; }
+
+    /* 載入中動畫 */
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2.5px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <div class="top-bar">
+    <div class="title-area">
+      <h1 class="title">🔤 英文發音練習</h1>
+      <p class="subtitle">Lesson 12: Diphthongs /aʊ/ (ou, ow) vs. /ɔɪ/ (oi, oy)</p>
+    </div>
+    <button id="engine-toggle" class="engine-toggle-btn" onclick="toggleEngine()">
+      <span>🌐 發音模式: speak (字典 API)</span>
+    </button>
+  </div>
+
+  <div class="group-tabs">
+    <button class="tab tab-au active" onclick="switchMode('au')">雙元音 /aʊ/</button>
+    <button class="tab tab-oi" onclick="switchMode('oi')">雙元音 /ɔɪ/</button>
+  </div>
+
+  <div id="card-view" class="grid-container"></div>
+</div>
+
+<script>
+const wordData = [
+  // Group 1: /aʊ/
+  { en: 'brown', zh: '棕色的', emoji: '🟫', spell: 'ow', type: 'au' },
+  { en: 'town', zh: '城鎮', emoji: '🏙️', spell: 'ow', type: 'au' },
+  { en: 'house', zh: '房子', emoji: '🏠', spell: 'ou', type: 'au' },
+  { en: 'sound', zh: '聲音', emoji: '🔊', spell: 'ou', type: 'au' },
+
+  // Group 2: /ɔɪ/
+  { en: 'boy', zh: '男孩', emoji: '👦', spell: 'oy', type: 'oi' },
+  { en: 'coin', zh: '硬幣', emoji: '🪙', spell: 'oi', type: 'oi' },
+  { en: 'annoy', zh: '使惱怒', emoji: '💢', spell: 'oy', type: 'oi' },
+  { en: 'soil', zh: '土壤', emoji: '🌱', spell: 'oi', type: 'oi' }
+];
+
+let currentAudio = null;
+let currentMode = 'au'; // 修正錯誤：初始化狀態應與 wordData 中的 'au' 一致
+let useBrowserTTS = false; // false = speak (字典API), true = speak_browser (瀏覽器API)
+
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playTone(freq, type, duration, volume = 0.2) {
+  try {
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    oscillator.type = type;
+    oscillator.frequency.value = freq;
+    gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + duration);
+  } catch (e) {
+    console.log("Web Audio 播音支援限制");
+  }
+}
+
+// 初始化渲染
+renderCards();
+
+function renderCards() {
+  const area = document.getElementById('card-view');
+  const filtered = wordData.filter(w => w.type === currentMode);
+  
+  area.innerHTML = filtered.map((w, idx) => {
+    const bgClass = `card-spell-${w.spell}`;
+    return `
+      <div class="word-card ${bgClass}" id="card-${idx}" onclick="speak('${w.en}', ${idx}, '${w.type}')">
+        <span class="badge badge-${w.spell}">-${w.spell}</span>
+        <span class="word-emoji">${w.emoji}</span>
+        <div class="word-en">${w.en}</div>
+        <div class="word-zh">${w.zh}</div>
+        <button class="btn-audio" id="btn-${idx}">🔊</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function switchMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.tab-${mode}`).classList.add('active'); // 修正錯誤：與對應之標籤類別同步
+  renderCards();
+}
+
+// 切換發音引擎邏輯
+function toggleEngine() {
+  useBrowserTTS = !useBrowserTTS;
+  const btn = document.getElementById('engine-toggle');
+  if (useBrowserTTS) {
+    btn.className = "engine-toggle-btn mode-browser";
+    btn.innerHTML = "💻 發音模式: speak_browser (瀏覽器 API)";
+  } else {
+    btn.className = "engine-toggle-btn";
+    btn.innerHTML = "🌐 發音模式: speak (字典 API)";
+  }
+}
+
+function speak(word, id, type) {
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+  if ('speechSynthesis' in window && window.speechSynthesis.speaking) { window.speechSynthesis.cancel(); }
+  
+  const card = document.getElementById('card-' + id);
+  const btn = document.getElementById('btn-' + id);
+  if (!card) return;
+
+  document.querySelectorAll('.word-card').forEach(c => c.classList.remove('playing'));
+  card.classList.add('playing');
+
+  // 如果使用者切換為使用 speak_browser 模式
+  if (useBrowserTTS) {
+    fallbackTTS(word, card);
+    return;
+  }
+
+  // 預設的 speak 模式 (抓取線上字典音軌)
+  if (btn) btn.innerHTML = '<span class="spinner"></span>';
+  fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`)
+    .then(r => r.json())
+    .then(data => {
+      let audioUrl = null;
+      if (Array.isArray(data)) {
+        for (const entry of data) {
+          for (const ph of (entry.phonetics || [])) {
+            if (ph.audio) { audioUrl = ph.audio; break; }
+          }
+          if (audioUrl) break;
+        }
+      }
+      if (btn) btn.textContent = '🔊';
+      if (audioUrl) {
+        currentAudio = new Audio(audioUrl);
+        currentAudio.play();
+        currentAudio.onended = () => card.classList.remove('playing');
+      } else {
+        fallbackTTS(word, card);
+      }
+    })
+    .catch(() => {
+      if (btn) btn.textContent = '🔊';
+      fallbackTTS(word, card);
+    });
+}
+
+function fallbackTTS(word, card) {
+  if ('speechSynthesis' in window) {
+    const utter = new SpeechSynthesisUtterance(word);
+    utter.lang = 'en-US';
+    utter.rate = 0.9; // 微調發音速率，更適合孩子聽辨
+    utter.onend = () => { if (card) card.classList.remove('playing'); };
+    window.speechSynthesis.speak(utter);
+  } else if (card) {
+    card.classList.remove('playing');
+  }
+}
+</script>
+</body>
+</html>
